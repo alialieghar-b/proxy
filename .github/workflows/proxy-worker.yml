@@ -33,13 +33,15 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+          echo "⏳ Sleeping 5s so you can read logs..."
+          sleep 5
+
           echo "Worker started at $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
           echo "Will run for up to 350 minutes..."
 
           while [ $SECONDS -lt 21000 ]; do
 
             # ★★★ PULL latest changes from remote ★★★
-            # This ensures the worker sees new queue entries added by the proxy.
             git pull --rebase origin main
 
             # If no queue file or empty, wait and retry
@@ -61,6 +63,7 @@ jobs:
             REQ_METHOD=$(echo "$LINE" | jq -r '.method // "GET"')
 
             echo "==> Processing $REQ_ID: $REQ_METHOD $REQ_URL"
+            sleep 1   # Give you a moment to see the request in logs
 
             # Fetch the URL
             HTTP_CODE=$(curl -s -o resp.tmp -w "%{http_code}" \
@@ -113,7 +116,6 @@ jobs:
               echo "No changes to commit"
             else
               git commit -m "Processed $REQ_ID"
-              # Pull again right before push to integrate any proxy queues (unlikely but safe)
               git pull --rebase
               git push
               echo "--> Response committed for $REQ_ID"
