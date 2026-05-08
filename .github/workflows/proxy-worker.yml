@@ -75,8 +75,9 @@ jobs:
                 --max-time 30 \
                 "$REQ_URL" || echo "000")
 
-              if [ "$HTTP_CODE" = "000" ]; then
-                echo "!! Fetch failed for $REQ_ID"
+              # Treat missing response file as failure
+              if [ "$HTTP_CODE" = "000" ] || [ ! -f resp.tmp ]; then
+                echo "!! Fetch failed for $REQ_ID (HTTP $HTTP_CODE, tempfile missing: $([ ! -f resp.tmp ] && echo yes || echo no))"
                 jq -n \
                   --arg status "502" \
                   --arg body "" \
