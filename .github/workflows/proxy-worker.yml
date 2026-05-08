@@ -38,6 +38,10 @@ jobs:
 
           while [ $SECONDS -lt 21000 ]; do
 
+            # ★★★ PULL latest changes from remote ★★★
+            # This ensures the worker sees new queue entries added by the proxy.
+            git pull --rebase origin main
+
             # If no queue file or empty, wait and retry
             if [ ! -f queue.jsonl ] || [ ! -s queue.jsonl ]; then
               sleep 5
@@ -109,6 +113,7 @@ jobs:
               echo "No changes to commit"
             else
               git commit -m "Processed $REQ_ID"
+              # Pull again right before push to integrate any proxy queues (unlikely but safe)
               git pull --rebase
               git push
               echo "--> Response committed for $REQ_ID"
