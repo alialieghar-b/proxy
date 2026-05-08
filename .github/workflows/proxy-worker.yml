@@ -68,9 +68,10 @@ jobs:
             (
               set -euo pipefail
 
+              # Fetch the URL, following redirects (HTTP → HTTPS)
               HTTP_CODE=$(curl -s -o resp.tmp -w "%{http_code}" \
                 -D resp_headers.txt \
-                -L \                    # ← Follow redirects (HTTP → HTTPS)
+                -L \
                 --max-time 30 \
                 "$REQ_URL" || echo "000")
 
