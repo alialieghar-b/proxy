@@ -41,7 +41,7 @@ jobs:
 
           while [ $SECONDS -lt 21000 ]; do
 
-            # ★★★ PULL latest changes from remote ★★★
+            # ★ PULL latest changes from remote ★
             git pull --rebase origin main
 
             # If no queue file or empty, wait and retry
@@ -57,69 +57,59 @@ jobs:
               continue
             fi
 
-            # Extract fields with jq
             REQ_ID=$(echo "$LINE" | jq -r '.id')
             REQ_URL=$(echo "$LINE" | jq -r '.url')
             REQ_METHOD=$(echo "$LINE" | jq -r '.method // "GET"')
 
             echo "==> Processing $REQ_ID: $REQ_METHOD $REQ_URL"
-            sleep 1   # Give you a moment to see the request in logs
+            sleep 1
 
-            # Fetch the URL
-            HTTP_CODE=$(curl -s -o resp.tmp -w "%{http_code}" \
-              -D resp_headers.txt \
-              --max-time 30 \
-              "$REQ_URL" || echo "000")
+            # Process request in a subshell so a single error doesn't crash the loop
+            (
+              set -euo pipefail
 
-            if [ "$HTTP_CODE" = "000" ]; then
-              echo "!! Fetch failed for $REQ_ID"
-              # Create error response JSON with jq
-              jq -n \
-                --arg status "502" \
-                --arg body "" \
-                --arg error "curl fetch failed" \
-                '{status: $status|tonumber, body_base64: $body, headers: {}, error: $error}' \
-                > "response_${REQ_ID}.json"
-            else
-              BODY_B64=$(base64 -w0 resp.tmp)
-              # Build headers JSON from resp_headers.txt using jq
-              HEADERS_JSON=$(awk '
-                BEGIN { print "{" }
-                /^[[:alnum:]-]+: / {
-                  gsub(/\r$/, "");
-                  split($0, a, ": ");
-                  name = a[1];
-                  value = substr($0, length(name)+2);
-                  gsub(/"/, "\\\"", value);
-                  if (NR > 1) printf ",";
-                  printf "\"%s\": \"%s\"", tolower(name), value;
-                }
-                END { print "}" }
-              ' resp_headers.txt)
+              HTTP_CODE=$(curl -s -o resp.tmp -w "%{http_code}" \
+                -D resp_headers.txt \
+                --max-time 30 \
+                "$REQ_URL" || echo "000")
 
-              # Use jq to merge status, body, headers
-              jq -n \
-                --arg status "$HTTP_CODE" \
-                --arg body "$BODY_B64" \
-                --argjson headers "$HEADERS_JSON" \
-                '{status: $status|tonumber, body_base64: $body, headers: $headers}' \
-                > "response_${REQ_ID}.json"
-            fi
+              if [ "$HTTP_CODE" = "000" ]; then
+                echo "!! Fetch failed for $REQ_ID"
+                jq -n \
+                  --arg status "502" \
+                  --arg body "" \
+                  --arg error "curl fetch failed" \
+                  '{status: $status|tonumber, body_base64: $body, headers: {}, error: $error}' \
+                  > "response_${REQ_ID}.json"
+              else
+                BODY_B64=$(base64 -w0 resp.tmp)
 
-            # Remove the processed line from queue
-            tail -n +2 queue.jsonl > queue_temp && mv queue_temp queue.jsonl
+                # Build headers JSON using the external Python script
+                HEADERS_JSON=$(python3 parse_headers.py)
 
-            # Stage and commit
-            git add "response_${REQ_ID}.json" queue.jsonl
+                jq -n \
+                  --arg status "$HTTP_CODE" \
+                  --arg body "$BODY_B64" \
+                  --argjson headers "$HEADERS_JSON" \
+                  '{status: $status|tonumber, body_base64: $body, headers: $headers}' \
+                  > "response_${REQ_ID}.json"
+              fi
 
-            if git diff --cached --quiet; then
-              echo "No changes to commit"
-            else
-              git commit -m "Processed $REQ_ID"
-              git pull --rebase
-              git push
-              echo "--> Response committed for $REQ_ID"
-            fi
+              # Remove the processed line from queue
+              tail -n +2 queue.jsonl > queue_temp && mv queue_temp queue.jsonl
+
+              # Stage and commit
+              git add "response_${REQ_ID}.json" queue.jsonl
+
+              if ! git diff --cached --quiet; then
+                git commit -m "Processed $REQ_ID"
+                git pull --rebase
+                git push
+                echo "--> Response committed for $REQ_ID"
+              else
+                echo "No changes to commit"
+              fi
+            ) || echo "!! Request $REQ_ID failed, but worker continues"
 
             sleep 2
           done
