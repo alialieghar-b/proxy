@@ -1,0 +1,129 @@
+name: 🔁 Proxy Worker (always‑on)
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'   # Every 6 hours – fallback restart
+  workflow_dispatch:        # Manual trigger
+
+concurrency:
+  group: proxy-worker
+  cancel-in-progress: false # Queue next run, don't cancel
+
+permissions:
+  contents: write           # So we can commit responses & queue updates
+  actions: write            # (optional) for future self‑trigger
+
+jobs:
+  worker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360    # Max 6 hours
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: 🔁 Proxy loop
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # Built‑in token
+        run: |
+          set -euo pipefail
+
+          # Set up git user for commits
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          echo "Worker started at $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+          echo "Running for up to 350 minutes..."
+
+          # Process requests until 350 minutes have passed
+          while [ $SECONDS -lt 21000 ]; do   # 21000 seconds = 350 minutes
+
+            # If queue file doesn't exist or is empty, skip
+            if [ ! -f queue.jsonl ] || [ ! -s queue.jsonl ]; then
+              sleep 5
+              continue
+            fi
+
+            # Read first line
+            LINE=$(head -n 1 queue.jsonl)
+            if [ -z "$LINE" ]; then
+              sleep 5
+              continue
+            fi
+
+            REQ_ID=$(echo "$LINE" | jq -r '.id')
+            REQ_URL=$(echo "$LINE" | jq -r '.url')
+            REQ_METHOD=$(echo "$LINE" | jq -r '.method // "GET"')
+
+            echo "==> Processing $REQ_ID: $REQ_METHOD $REQ_URL"
+
+            # Fetch the target URL (simple GET only for now, extendable)
+            # Save response body, status code, and headers
+            HTTP_CODE=$(curl -s -o resp.tmp -w "%{http_code}" \
+              -D resp_headers.txt \
+              --max-time 30 \
+              "$REQ_URL" || echo "000")
+
+            # If curl failed completely, HTTP_CODE might be "000"
+            if [ "$HTTP_CODE" = "000" ]; then
+              echo "!! Fetch failed for $REQ_ID, storing error response"
+              BODY_B64=""
+              STATUS=502
+              # Create minimal error response
+              cat > "response_${REQ_ID}.json" <<ERRJSON
+{
+  "status": 502,
+  "body_base64": "",
+  "headers": {},
+  "error": "curl fetch failed"
+}
+ERRJSON
+            else
+              BODY_B64=$(base64 -w0 resp.tmp)
+              STATUS=$HTTP_CODE
+              # Build a simple JSON object for headers (only selected ones)
+              HEADERS_JSON=$(awk '
+                BEGIN { print "{" }
+                /^[[:alnum:]-]+: / {
+                  gsub(/\r$/, "");
+                  split($0, a, ": ");
+                  name = a[1];
+                  value = substr($0, length(name)+2);
+                  gsub(/"/, "\\\"", value);
+                  if (NR > 1) printf ",";
+                  printf "\"%s\": \"%s\"", tolower(name), value;
+                }
+                END { print "}" }
+              ' resp_headers.txt)
+
+              cat > "response_${REQ_ID}.json" <<RESPJSON
+{
+  "status": $STATUS,
+  "body_base64": "$BODY_B64",
+  "headers": $HEADERS_JSON
+}
+RESPJSON
+            fi
+
+            # Remove the processed line from queue
+            tail -n +2 queue.jsonl > queue_temp && mv queue_temp queue.jsonl
+
+            # Stage changes
+            git add "response_${REQ_ID}.json" queue.jsonl
+
+            # Commit only if there are staged changes
+            if git diff --cached --quiet; then
+              echo "No changes to commit"
+            else
+              git commit -m "Processed $REQ_ID"
+              git pull --rebase   # just in case (should be no conflict)
+              git push
+              echo "--> Response committed for $REQ_ID"
+            fi
+
+            # Small sleep to avoid aggressive polling
+            sleep 2
+          done
+
+          echo "Worker loop finished (time limit reached). Exiting cleanly."
