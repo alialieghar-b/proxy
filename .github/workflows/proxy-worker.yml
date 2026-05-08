@@ -70,6 +70,7 @@ jobs:
 
               HTTP_CODE=$(curl -s -o resp.tmp -w "%{http_code}" \
                 -D resp_headers.txt \
+                -L \                    # ← Follow redirects (HTTP → HTTPS)
                 --max-time 30 \
                 "$REQ_URL" || echo "000")
 
