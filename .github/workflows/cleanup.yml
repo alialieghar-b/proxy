@@ -1,0 +1,45 @@
+# cleanup.yml — one‑time use: remove operational files from main branch
+# Place in .github/workflows/cleanup.yml, run manually, then delete this file.
+name: Cleanup main branch
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - name: Remove old operational files
+        run: |
+          # Remove the shared queue file
+          rm -f queue.jsonl
+
+          # Remove all response files (old JSON responses)
+          rm -f response_*.json
+
+          # If a response directory exists, remove it
+          rm -rf response/
+
+          # Ensure any empty directories are gone (Git won't track empty dirs)
+          # but we can leave that to natural git behavior.
+
+      - name: Commit and push cleanup
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "Cleanup: remove operational files from main"
+            git push origin main
+            echo "Cleanup committed and pushed."
+          else
+            echo "No changes to commit."
+          fi
