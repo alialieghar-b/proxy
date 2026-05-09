@@ -1,0 +1,21 @@
+{
+  "s": 200,
+  "b": "UNV/IWoPwJVW1o3IlDfjXPJweDnJ2zBUME5CHk/BEFMPH9mSb/7lxteM0McoZ8q/fQNz+eHY8Fnoifo+L+hRGWmeqRt8SXqvbrF7PrFrwmK4WMIHUMWs7F6i9aHcR4SdsN049MuX12wXGlZ90hYqk08gmLEx59HhEOAEJFQcWk5YBBxqy1dzBn1ZTOhGuiq3wgFkH2x26u5W0PkGitnvOnmsV5mnapuIixVrJHLTLTnO6f4bFwmaGmxtXaxbkbyCvYdHnrtjd4IB2HWoDFIqRGxm+CTn14aoCwa3Pioi5e69vhhBt+iGkTCeX6+JG4urYugb/9xFzJkH+DlxwyJzD4vQtfhMIL8eUaC8PHMX5Ho8AU1xyXSTQs2l9CcfoLvMArBSHR+4tMXx152XRhbe5kuamStOzPxpnd5opDptSq9ttvH3L4IPJJLBlitNxOb/rKcyviyyC0blchWJH9cIx/Z/IJCx0s5Y767H/EQluW329/9iQerjgDjQTR/z7RR0p6q+kMz6ZhbCH4sSaZ8r17zqZFTGQe2NN1KSSiSxMz93xV12imlVj/ClYbBYLAT1sVBU5kwTMKdmPz3b+jF1UR/ciL3x0gi7FcvUGcZ1LM/UDyjmeVWers6IpeuTGgDr02Y1GZCxQQsscQ4qPVhdGtY7BztwAw==",
+  "h": {
+    "content-type": "application/x-protobuffer",
+    "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+    "pragma": "no-cache",
+    "expires": "Mon, 01 Jan 1990 00:00:00 GMT",
+    "date": "Sat, 09 May 2026 06:17:49 GMT",
+    "accept-ch": "Sec-CH-UA-Arch, Sec-CH-UA-Bitness, Sec-CH-UA-Full-Version, Sec-CH-UA-Full-Version-List, Sec-CH-UA-Model, Sec-CH-UA-WoW64, Sec-CH-UA-Form-Factors, Sec-CH-UA-Platform, Sec-CH-UA-Platform-Version",
+    "content-security-policy": "require-trusted-types-for 'script';report-uri /checkin/_/AndroidCheckinHttp/cspreport",
+    "permissions-policy": "ch-ua-arch=*, ch-ua-bitness=*, ch-ua-full-version=*, ch-ua-full-version-list=*, ch-ua-model=*, ch-ua-wow64=*, ch-ua-form-factors=*, ch-ua-platform=*, ch-ua-platform-version=*",
+    "cross-origin-opener-policy": "same-origin",
+    "content-encoding": "gzip",
+    "server": "ESF",
+    "x-xss-protection": "0",
+    "x-frame-options": "SAMEORIGIN",
+    "x-content-type-options": "nosniff",
+    "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+  }
+}
