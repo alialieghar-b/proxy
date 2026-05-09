@@ -1,0 +1,23 @@
+{
+  "s": 200,
+  "b": "49yqb6Yh3vq6y8cyNTNFCZx68x/1DsnE4A/gkxSa/X6VChi2CWNgMrVKg+tzRqj7hc4hOpN/NhE3riv/g02nfICR04M+swaxgz+IediFxRjGlghY+/halXPoBVfuR+aO6zd9y6CtfTNOjwbX6dMxA3i+7GtOTTGyEZo1O9FqgfUF8VIv6bW69VI++b5B9E1mml2OQ7vxGp/j6JX/4iUYVUQPAQ8wnRl5TAHvb+fYYt0AYwTGZGeBVvKfc5bJD2E+84kCFvJYbYPmVjNAFRvZBB3twzPZXw7ximo0o95Tc5DxoN4+x4Sc57Qe/RJ4/0xtVbLnGGSl5lEMTGW0t8utarfzvRJ0m1kMPWB5GsUK74/2HDRPoP+51ynUl2BIS9yPQBJFsED3lDqv3Dc9eaLk+Xam8aPvtUIRH2dnsZF3y8x7218tgf6ejKOAyFV1LjIXlWoAIMbHRgaQmzJtRm43Nra/mjvSD0NayNmfC0L6fmG+BtJWI1CnRgCxs/Z/qh6CzsRUbOEEmuFUruwF",
+  "h": {
+    "date": "Sat, 09 May 2026 06:22:06 GMT",
+    "pragma": "no-cache",
+    "expires": "-1",
+    "cache-control": "no-cache, must-revalidate",
+    "content-type": "text/javascript; charset=UTF-8",
+    "strict-transport-security": "max-age=31536000",
+    "content-security-policy": "object-src 'none';base-uri 'self';script-src 'nonce-C5fbLdqXj0haiZHy8vbuVw' 'strict-dynamic' 'report-sample' 'unsafe-eval' 'unsafe-inline' https: http:;report-uri https://csp.withgoogle.com/csp/gws/cdt1",
+    "cross-origin-opener-policy": "same-origin-allow-popups; report-to=\"gws\"",
+    "report-to": "{\"group\":\"gws\",\"max_age\":2592000,\"endpoints\":[{\"url\":\"https://csp.withgoogle.com/csp/report-to/gws/cdt1\"}]}",
+    "accept-ch": "Sec-CH-UA-WoW64",
+    "permissions-policy": "unload=()",
+    "content-disposition": "attachment; filename=\"f.txt\"",
+    "content-encoding": "br",
+    "server": "gws",
+    "x-xss-protection": "0",
+    "x-frame-options": "SAMEORIGIN",
+    "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+  }
+}
