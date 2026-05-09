@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """
-github_api_worker.py – fast, atomic relay worker using the GitHub REST & Git Data APIs.
+github_api_worker.py – fast relay worker using the GitHub REST API.
 
 - Parallel fetches of real URLs (thread pool, batch size 5).
-- Atomic commits via the Git Data API: all responses and queue deletions
-  land in a single branch update.  No per‑file PUT conflicts, no 409s.
+- Responses are uploaded individually with safe retry; queue files are
+  deleted after upload.  No more Git Data API atomic commits – avoids
+  conflicts with auto‑merge workflows.
 - Timeouts on every HTTP request so the worker never hangs.
 - Line‑buffered output for real‑time logging in GitHub Actions.
 
@@ -47,10 +48,10 @@ API_BASE = f"https://api.github.com/repos/{REPO}"
 HEADERS = {
     "Authorization": f"token {TOKEN}",
     "Accept": "application/vnd.github.v3+json",
-    "User-Agent": "gh-relay-worker/2.1",
+    "User-Agent": "gh-relay-worker/3.0",
 }
 
-# ------------------------------------------------------------------ session with timeout
+# ------------------------------------------------------------------ session helpers with timeout
 DEFAULT_TIMEOUT = 30   # seconds
 
 def _request(method, url, **kwargs):
@@ -124,58 +125,46 @@ def api_list_dir(path):
         page += 1
     return entries
 
-# ------------------------------------------------------------------ Git Data API (atomic operations)
-def _git_api(endpoint, method="GET", json_data=None):
-    url = f"https://api.github.com/repos/{REPO}/git/{endpoint}"
-    resp = _request(method, url, headers=HEADERS, json=json_data)
-    if resp.status_code not in (200, 201, 204):
-        raise Exception(f"Git Data API {method} {endpoint}: {resp.status_code} {resp.text}")
-    return resp.json() if resp.text else None
+# ------------------------------------------------------------------ safe single‑file upload / delete
+def put_file_safe(path, content_str, message, retries=3):
+    url = f"{API_BASE}/contents/{path}"
+    for attempt in range(1, retries + 1):
+        existing = api_get(path)
+        sha = existing["sha"] if existing is not None else None
+        payload = {
+            "message": message,
+            "content": base64.b64encode(content_str.encode("utf-8")).decode("utf-8"),
+            "branch": BRANCH,
+        }
+        if sha:
+            payload["sha"] = sha
+        resp = _request("PUT", url, headers=HEADERS, json=payload)
+        if resp.status_code in (200, 201):
+            return
+        elif resp.status_code == 409:
+            print(f"⚠️ PUT {path} conflict, retry {attempt}/{retries}")
+            time.sleep(0.5)
+        else:
+            raise Exception(f"PUT {path}: {resp.status_code}")
+    raise Exception(f"PUT {path}: failed after retries")
 
-def get_branch_tip():
-    ref_path = f"refs/heads/{BRANCH}"
-    url = f"https://api.github.com/repos/{REPO}/git/{ref_path}"
-    resp = _request("GET", url, headers=HEADERS)
-    if resp.status_code != 200:
-        raise Exception(f"get branch tip: {resp.status_code} {resp.text}")
-    return resp.json()["object"]["sha"]
-
-def get_commit_tree_sha(commit_sha):
-    commit = _git_api(f"commits/{commit_sha}")
-    return commit["tree"]["sha"]
-
-def create_blob(content_str):
-    blob = _git_api("blobs", method="POST", json_data={
-        "content": content_str,
-        "encoding": "utf-8",
-    })
-    return blob["sha"]
-
-def create_tree(base_tree_sha, entries):
-    tree = _git_api("trees", method="POST", json_data={
-        "base_tree": base_tree_sha,
-        "tree": entries,
-    })
-    return tree["sha"]
-
-def create_commit(message, tree_sha, parents):
-    commit = _git_api("commits", method="POST", json_data={
-        "message": message,
-        "tree": tree_sha,
-        "parents": [parents],
-    })
-    return commit["sha"]
-
-def update_branch_ref(commit_sha, expected_tip_sha):
-    ref_path = f"refs/heads/{BRANCH}"
-    url = f"https://api.github.com/repos/{REPO}/git/{ref_path}"
-    payload = {"sha": commit_sha, "force": False}
-    resp = _request("PATCH", url, headers=HEADERS, json=payload)
-    if resp.status_code == 409 or resp.status_code == 422:
-        return False
-    if resp.status_code != 200:
-        raise Exception(f"update ref: {resp.status_code} {resp.text}")
-    return True
+def delete_file_safe(path, message, retries=3):
+    for attempt in range(1, retries + 1):
+        info = api_get(path)
+        if info is None:
+            return
+        sha = info["sha"]
+        url = f"{API_BASE}/contents/{path}"
+        payload = {"message": message, "sha": sha, "branch": BRANCH}
+        resp = _request("DELETE", url, headers=HEADERS, json=payload)
+        if resp.status_code in (200, 204):
+            return
+        elif resp.status_code == 409:
+            print(f"⚠️ DELETE {path} conflict, retry {attempt}/{retries}")
+            time.sleep(0.5)
+        else:
+            raise Exception(f"DELETE {path}: {resp.status_code}")
+    raise Exception(f"DELETE {path}: failed after retries")
 
 # ------------------------------------------------------------------ fetch helper (executed in threads)
 def fetch_real_url(method, url, headers, body_data):
@@ -193,50 +182,9 @@ def fetch_real_url(method, url, headers, body_data):
         print(f"  !! background fetch failed for {url}: {e}")
         return (502, b"", {})
 
-# ------------------------------------------------------------------ fallback single-file safe functions
-def put_file_safe(path, content_str, message, retries=3):
-    url = f"{API_BASE}/contents/{path}"
-    for attempt in range(1, retries + 1):
-        existing = api_get(path)
-        sha = existing["sha"] if existing is not None else None
-        payload = {
-            "message": message,
-            "content": base64.b64encode(content_str.encode("utf-8")).decode("utf-8"),
-            "branch": BRANCH,
-        }
-        if sha:
-            payload["sha"] = sha
-        resp = _request("PUT", url, headers=HEADERS, json=payload)
-        if resp.status_code in (200, 201):
-            return
-        elif resp.status_code == 409:
-            print(f"⚠️ fallback PUT {path} conflict, retry {attempt}/{retries}")
-            time.sleep(0.5)
-        else:
-            raise Exception(f"fallback PUT {path}: {resp.status_code}")
-    raise Exception(f"fallback PUT {path}: failed after retries")
-
-def delete_file_safe(path, message, retries=3):
-    for attempt in range(1, retries + 1):
-        info = api_get(path)
-        if info is None:
-            return
-        sha = info["sha"]
-        url = f"{API_BASE}/contents/{path}"
-        payload = {"message": message, "sha": sha, "branch": BRANCH}
-        resp = _request("DELETE", url, headers=HEADERS, json=payload)
-        if resp.status_code in (200, 204):
-            return
-        elif resp.status_code == 409:
-            print(f"⚠️ fallback DELETE {path} conflict, retry {attempt}/{retries}")
-            time.sleep(0.5)
-        else:
-            raise Exception(f"fallback DELETE {path}: {resp.status_code}")
-    raise Exception(f"fallback DELETE {path}: failed after retries")
-
 # ------------------------------------------------------------------ worker loop
 def worker_loop():
-    print("🚀 Atomic API worker started (batched + parallel + atomic)")
+    print("🚀 Fast API worker started (parallel fetches + single‑file uploads)")
     print("💓 Initial heartbeat")
     last_heartbeat = time.time()
     empty_since = None
@@ -271,10 +219,7 @@ def worker_loop():
                 existing = api_get(response_path)
                 if existing is not None:
                     print(f"--> Response already exists for {queue_name}, removing queue file")
-                    reqs.append({
-                        "queue_name": queue_name,
-                        "skip": True,
-                    })
+                    reqs.append({"queue_name": queue_name, "skip": True})
                     continue
 
                 file_info = api_get(queue_path)
@@ -295,10 +240,7 @@ def worker_loop():
 
                 if not url:
                     print(f"!! Malformed request {queue_name}, will delete")
-                    reqs.append({
-                        "queue_name": queue_name,
-                        "malformed": True,
-                    })
+                    reqs.append({"queue_name": queue_name, "malformed": True})
                     continue
 
                 try:
@@ -319,7 +261,6 @@ def worker_loop():
 
             # Separate entries that need actual fetch
             to_fetch = [r for r in reqs if "method" in r]
-            skip_or_malformed = [r for r in reqs if "skip" in r or "malformed" in r]
 
             results = {}
             # 3. Parallel fetch for real requests
@@ -343,82 +284,25 @@ def worker_loop():
                             code, body, resp_headers = 502, b"", {}
                         results[qname] = (code, body, resp_headers)
 
-            # 4. Build atomic commit (with retry on branch movement)
-            MAX_ATOMIC_RETRIES = 3
-            committed = False
-            for attempt in range(1, MAX_ATOMIC_RETRIES + 1):
+            # 4. Upload responses and delete queue files (serial, safe)
+            for r in reqs:
+                qname = r["queue_name"]
                 try:
-                    tip_sha = get_branch_tip()
-                    tree_sha = get_commit_tree_sha(tip_sha)
-
-                    blob_shas = {}
-                    for r in reqs:
-                        if "skip" in r or "malformed" in r:
-                            continue
-                        code, body, resp_headers = results[r["queue_name"]]
+                    if "skip" in r:
+                        delete_file_safe(f"queue/{qname}", f"Remove already-processed {qname}")
+                        print(f"--> Cleaned up already-processed {qname}")
+                    elif "malformed" in r:
+                        delete_file_safe(f"queue/{qname}", f"Remove malformed {qname}")
+                        print(f"--> Removed malformed {qname}")
+                    else:
+                        code, body, resp_headers = results[qname]
                         enc_body = encrypt(body)
                         resp_obj = {"s": code, "b": enc_body, "h": resp_headers}
-                        blob_content = json.dumps(resp_obj)
-                        blob_shas[r["queue_name"]] = create_blob(blob_content)
-
-                    tree_entries = []
-                    for r in reqs:
-                        qname = r["queue_name"]
-                        if "skip" not in r and "malformed" not in r:
-                            tree_entries.append({
-                                "path": f"response/{qname}",
-                                "mode": "100644",
-                                "type": "blob",
-                                "sha": blob_shas[qname],
-                            })
-                        tree_entries.append({
-                            "path": f"queue/{qname}",
-                            "mode": "100644",
-                            "type": "blob",
-                            "sha": None,
-                        })
-
-                    new_tree_sha = create_tree(tree_sha, tree_entries)
-                    commit_msg = f"Processed {len(reqs)} requests"
-                    commit_sha = create_commit(commit_msg, new_tree_sha, tip_sha)
-
-                    ok = update_branch_ref(commit_sha, tip_sha)
-                    if ok:
-                        for r in reqs:
-                            qname = r["queue_name"]
-                            if "skip" in r:
-                                print(f"--> Cleaned up already-processed {qname}")
-                            elif "malformed" in r:
-                                print(f"--> Removed malformed {qname}")
-                            else:
-                                print(f"--> Done {qname}")
-                        committed = True
-                        break
-                    else:
-                        print(f"⚠️ Branch moved during atomic commit, retry {attempt}/{MAX_ATOMIC_RETRIES}")
-                        time.sleep(0.5)
-                except Exception as e:
-                    trace = traceback.format_exc()
-                    print(f"!! Atomic commit attempt {attempt} failed: {e}\n{trace}")
-                    time.sleep(1)
-
-            if not committed:
-                print("!! Atomic commit repeatedly failed; falling back to individual PUT/DELETE")
-                for r in reqs:
-                    qname = r["queue_name"]
-                    try:
-                        if "skip" in r:
-                            delete_file_safe(f"queue/{qname}", f"Remove already-processed {qname}")
-                        elif "malformed" in r:
-                            delete_file_safe(f"queue/{qname}", f"Remove malformed {qname}")
-                        else:
-                            code, body, resp_headers = results[qname]
-                            enc_body = encrypt(body)
-                            resp_obj = {"s": code, "b": enc_body, "h": resp_headers}
-                            put_file_safe(f"response/{qname}", json.dumps(resp_obj), f"Processed {qname}")
-                            delete_file_safe(f"queue/{qname}", f"Remove {qname}")
-                    except Exception as fallback_err:
-                        print(f"!! Fallback failed for {qname}: {fallback_err}")
+                        put_file_safe(f"response/{qname}", json.dumps(resp_obj), f"Processed {qname}")
+                        delete_file_safe(f"queue/{qname}", f"Remove {qname}")
+                        print(f"--> Done {qname}")
+                except Exception as upload_err:
+                    print(f"!! Failed to finalise {qname}: {upload_err}")
 
         except KeyboardInterrupt:
             print("\nWorker stopped.")
