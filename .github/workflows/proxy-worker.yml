@@ -41,6 +41,12 @@ jobs:
 
           while [ $SECONDS -lt 21000 ]; do
 
+            # Reset any leftover rebase state before each loop iteration
+            if [ -d .git/rebase-merge ] || [ -d .git/rebase-apply ]; then
+              echo "⚠️  Detected leftover rebase state, aborting..."
+              git rebase --abort 2>/dev/null || true
+            fi
+
             git pull --rebase origin main
 
             if [ ! -f queue.jsonl ] || [ ! -s queue.jsonl ]; then
@@ -113,14 +119,46 @@ jobs:
                   > "response_${REQ_ID}.json"
               fi
 
-              # Remove processed line from queue
+              # Remove the processed line from queue locally
               tail -n +2 queue.jsonl > queue_temp && mv queue_temp queue.jsonl
 
               git add "response_${REQ_ID}.json" queue.jsonl
               if ! git diff --cached --quiet; then
                 git commit -m "Processed $REQ_ID"
-                git pull --rebase
-                git push
+
+                # Try to push safely with automatic conflict resolution
+                PUSH_SUCCESS=false
+                for i in 1 2 3; do
+                  if git pull --rebase origin main; then
+                    if git push origin main; then
+                      PUSH_SUCCESS=true
+                      break
+                    fi
+                  fi
+                  echo "⚠️  Push attempt $i failed, retrying after reset..."
+                  # Abort any partial rebase and reset to remote to clean up
+                  git rebase --abort 2>/dev/null || true
+                  git fetch origin main
+                  git reset --hard origin/main
+                  # Re-apply our change on top of the latest remote state
+                  # But first check if the processed line is still there
+                  if [ -f response_${REQ_ID}.json ]; then
+                    # Re-apply: remove processed line from queue
+                    if [ -f queue.jsonl ]; then
+                      tail -n +2 queue.jsonl > queue_temp && mv queue_temp queue.jsonl
+                    fi
+                    git add "response_${REQ_ID}.json" queue.jsonl
+                    git commit -m "Processed $REQ_ID" || true
+                  else
+                    # Something went wrong, but we can break
+                    break
+                  fi
+                  sleep 2
+                done
+
+                if [ "$PUSH_SUCCESS" = false ]; then
+                  echo "❌ Failed to push after retries, response file may still be local"
+                fi
                 echo "--> Response committed for $REQ_ID"
               else
                 echo "No changes to commit"
