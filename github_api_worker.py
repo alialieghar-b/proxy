@@ -5,7 +5,7 @@ github_api_worker.py – batch‑response relay worker using the GitHub REST API
 - Parallel downloads of queue files (thread pool).
 - Parallel fetches of real URLs (thread pool, batch size 20).
 - Responses are packed into a single batch blob and uploaded
-  as response_batch/<batch_id>.json.
+  as response_batch_<batch_id>.json (flat file, no subdirectory).
 - Queue files are deleted in parallel after upload.
 - Safe retry on PUT/DELETE conflicts.
 - Rate‑limit watchdog prevents 403 errors.
@@ -51,7 +51,7 @@ API_BASE = f"https://api.github.com/repos/{REPO}"
 HEADERS = {
     "Authorization": f"token {TOKEN}",
     "Accept": "application/vnd.github.v3+json",
-    "User-Agent": "gh-relay-worker/5.0",
+    "User-Agent": "gh-relay-worker/5.1",
 }
 
 # ------------------------------------------------------------------ session helpers with timeout
@@ -242,7 +242,6 @@ def fetch_real_url(method, url, headers, body_data):
         return (502, b"", {})
 
 def delete_queue_file(queue_name):
-    """Delete a single queue file, used in cleanup and after batch commit."""
     try:
         delete_file_safe(f"queue/{queue_name}", f"Remove {queue_name}")
     except Exception as e:
@@ -250,7 +249,7 @@ def delete_queue_file(queue_name):
 
 # ------------------------------------------------------------------ worker loop
 def worker_loop():
-    print("🚀 Batch‑response API worker started (packed responses)")
+    print("🚀 Batch‑response API worker started (flat batch files)")
     print("💓 Initial heartbeat")
     last_heartbeat = time.time()
     empty_since = None
@@ -290,7 +289,6 @@ def worker_loop():
             if not reqs:
                 continue
 
-            # Separate skip/malformed from real requests
             to_fetch = [r for r in reqs if "method" in r]
             skip_or_malformed = [r for r in reqs if "skip" in r or "malformed" in r]
 
@@ -327,7 +325,8 @@ def worker_loop():
                 # Batch ID = oldest queue name's timestamp part (first 18 digits)
                 oldest_name = min(r["queue_name"] for r in to_fetch)
                 batch_id = oldest_name[:18] if len(oldest_name) >= 18 else oldest_name
-                batch_path = f"response_batch/{batch_id}.json"
+                # ★ Flat file, no subdirectory
+                batch_path = f"response_batch_{batch_id}.json"
 
                 manifest = []
                 data = {}
@@ -344,7 +343,7 @@ def worker_loop():
 
                 print(f"--> Uploaded batch {batch_id} with {len(to_fetch)} responses")
 
-            # ---- Delete all queue files for processed requests (both real and cleaned) ----
+            # ---- Delete all queue files for processed requests ----
             all_processed = [r["queue_name"] for r in reqs]
             with ThreadPoolExecutor(max_workers=10) as del_executor:
                 for qname in all_processed:
