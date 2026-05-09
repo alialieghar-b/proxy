@@ -1,0 +1,23 @@
+{
+  "s": 200,
+  "b": "DKuaB8Mu899S35cNmWWli3Wto9QbZ/XJvrdn/PlP5a4xLZZZSKEtXnidLc+8S8nvd0csns0mxcYPcegdOW7GKqeOTbpCyrGJR41ISOo7LHwiWHwauqjRbsdbOwcpYcapb2e4lXOZal1UZWewXpEGqRYzLVNu1EDgsHajQSYbsHAmGijHm5dYuBwIPrYKrNMZwpCDYU1LFQ==",
+  "h": {
+    "date": "Sat, 09 May 2026 07:07:35 GMT",
+    "pragma": "no-cache",
+    "expires": "-1",
+    "cache-control": "no-cache, must-revalidate",
+    "content-type": "text/javascript; charset=UTF-8",
+    "strict-transport-security": "max-age=31536000",
+    "content-security-policy": "object-src 'none';base-uri 'self';script-src 'nonce-_h2MOmBOJUkKMclCtgd24w' 'strict-dynamic' 'report-sample' 'unsafe-eval' 'unsafe-inline' https: http:;report-uri https://csp.withgoogle.com/csp/gws/cdt1",
+    "cross-origin-opener-policy": "same-origin-allow-popups; report-to=\"gws\"",
+    "report-to": "{\"group\":\"gws\",\"max_age\":2592000,\"endpoints\":[{\"url\":\"https://csp.withgoogle.com/csp/report-to/gws/cdt1\"}]}",
+    "accept-ch": "Sec-CH-Prefers-Color-Scheme, Downlink, RTT, Sec-CH-UA-Form-Factors, Sec-CH-UA-Platform, Sec-CH-UA-Platform-Version, Sec-CH-UA-Full-Version, Sec-CH-UA-Arch, Sec-CH-UA-Model, Sec-CH-UA-Bitness, Sec-CH-UA-Full-Version-List, Sec-CH-UA-WoW64",
+    "permissions-policy": "unload=()",
+    "content-disposition": "attachment; filename=\"f.txt\"",
+    "content-encoding": "br",
+    "server": "gws",
+    "x-xss-protection": "0",
+    "x-frame-options": "SAMEORIGIN",
+    "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+  }
+}
