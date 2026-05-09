@@ -113,6 +113,9 @@ jobs:
               echo "$REQ_HEADERS" > headers.json
               python3 filter_headers.py headers.json headers.txt
 
+              # ★ Escape URL to prevent eval from misinterpreting special characters (e.g. $rpc)
+              ESCAPED_URL=$(printf '%q' "$REQ_URL")
+
               # ★ --compressed makes curl request gzip & decompress automatically
               CURL_CMD="curl --compressed -s -o resp.tmp -w \"%{http_code}\" -D resp_headers.txt -L --max-time 30"
               if [ "$REQ_METHOD" != "GET" ]; then
@@ -125,7 +128,7 @@ jobs:
                 echo "$REQ_BODY_B64" | base64 -d > body.tmp
                 CURL_CMD="$CURL_CMD --data-binary @body.tmp"
               fi
-              CURL_CMD="$CURL_CMD \"$REQ_URL\""
+              CURL_CMD="$CURL_CMD $ESCAPED_URL"
 
               HTTP_CODE=$(eval "$CURL_CMD" || echo "000")
 
