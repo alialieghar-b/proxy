@@ -6,7 +6,7 @@ github_api_worker.py – fast, atomic relay worker using the GitHub REST & Git D
 - Atomic commits via the Git Data API: all responses and queue deletions
   land in a single branch update.  No per‑file PUT conflicts, no 409s.
 - Timeouts on every HTTP request so the worker never hangs.
-- Heartbeat message to confirm the loop is alive.
+- Line‑buffered output for real‑time logging in GitHub Actions.
 
 Authentication: GITHUB_TOKEN environment variable (provided by Actions).
 Encryption key: ENCRYPTION_KEY env var (same 64‑char hex string as the addon).
@@ -26,6 +26,9 @@ import traceback
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import requests
+
+# ------------------------------------------------------------------ force line‑buffered output for Actions
+sys.stdout.reconfigure(line_buffering=True)
 
 # ------------------------------------------------------------------ helpers
 def _env(key, default=None):
@@ -234,7 +237,8 @@ def delete_file_safe(path, message, retries=3):
 # ------------------------------------------------------------------ worker loop
 def worker_loop():
     print("🚀 Atomic API worker started (batched + parallel + atomic)")
-    last_heartbeat = 0
+    print("💓 Initial heartbeat")
+    last_heartbeat = time.time()
     empty_since = None
 
     while True:
