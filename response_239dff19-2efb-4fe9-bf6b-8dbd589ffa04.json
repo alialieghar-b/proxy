@@ -1,0 +1,23 @@
+{
+  "s": 200,
+  "b": "7To+mYd4Gf+3pS0HkqWtV+9yuUaZYkqCiCBCTlK14tqaCrFj50UjIFgXVcBhG3tVaJV6NhnJ6O9937f36+6acaIfGX1ddUwEOcCPoBA1N/d6ZuDBnQI20u9iaP4+uMxQ07AFfaOHhlddyLjMKP2l8/pIo22m2A8/59swY/SFlKY8vWg8U5T/BxJOiCt8oycZITgmOu2wr7uD9vJs5gSF8EtyExYlT09DdY5kqB4cp0Zs6mDLZbqeKl+v4a+Z9AnW82Ks+6CwKTh1T8ErwC8e8yMqnv0AZbpKAeqxbsPiSsigIf9tJwddVYI7CJIl7nZ/VJ5vqiTKCxsBHhwiZXYr7dugBDZLZhm1jyVrBI6W3CC3srtpd6qzRXkLpGuNYEuqtK3IiSoOWUQqkUX7zor7DL69nOBty5uaLc01f9yRJ5pbE5fQr/Iy/w9WBKvukMjhCE6eNL+1hAcg/E9hKDu0BYy05+lYO3YT14FyMfLjnKtzuMjU3/K+DLcKhKYGtqEef9tEsgCRhoaAOLZ0ICSLPsD6v23QNtEJ8mWcnfHetW0P/nFZ+d2XBSzZl9DWifwTF+DAv4TnDRRRhDEqmnAkfE38Pu205V1cT8oBn4GteKzgeLNo5knxoh4uP5hiEBE9I6+UtJ8Xxq5ez835daTa8TtAGvoJ02PWqWpZqrB00MJz3CB4DI88ewUbHMXtvZN85ZY4EjlN4Gxk30Jz2Whnoyx3sQ3U9xOrUeed8EoM1gkOv7sZTIJh",
+  "h": {
+    "date": "Sat, 09 May 2026 06:01:59 GMT",
+    "pragma": "no-cache",
+    "expires": "-1",
+    "cache-control": "no-cache, must-revalidate",
+    "content-type": "text/javascript; charset=UTF-8",
+    "strict-transport-security": "max-age=31536000",
+    "content-security-policy": "object-src 'none';base-uri 'self';script-src 'nonce-ywGBWtmQcCFDZwbUB6n8-g' 'strict-dynamic' 'report-sample' 'unsafe-eval' 'unsafe-inline' https: http:;report-uri https://csp.withgoogle.com/csp/gws/cdt1",
+    "cross-origin-opener-policy": "same-origin-allow-popups; report-to=\"gws\"",
+    "report-to": "{\"group\":\"gws\",\"max_age\":2592000,\"endpoints\":[{\"url\":\"https://csp.withgoogle.com/csp/report-to/gws/cdt1\"}]}",
+    "accept-ch": "Sec-CH-Prefers-Color-Scheme, Downlink, RTT, Sec-CH-UA-Form-Factors, Sec-CH-UA-Platform, Sec-CH-UA-Platform-Version, Sec-CH-UA-Full-Version, Sec-CH-UA-Arch, Sec-CH-UA-Model, Sec-CH-UA-Bitness, Sec-CH-UA-Full-Version-List, Sec-CH-UA-WoW64",
+    "permissions-policy": "unload=()",
+    "content-disposition": "attachment; filename=\"f.txt\"",
+    "content-encoding": "br",
+    "server": "gws",
+    "x-xss-protection": "0",
+    "x-frame-options": "SAMEORIGIN",
+    "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+  }
+}
