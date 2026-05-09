@@ -21,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: relay               # ★ work on the relay branch
+          ref: relay
           fetch-depth: 1
 
       - name: 🔁 Proxy loop
@@ -34,7 +34,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Ensure operational directories exist (no placeholder files)
           mkdir -p queue response failed
 
           echo "⏳ Sleeping 5s so you can read logs..."
@@ -45,7 +44,6 @@ jobs:
 
           while [ $SECONDS -lt 21000 ]; do
 
-            # Reset any leftover rebase state
             if [ -d .git/rebase-merge ] || [ -d .git/rebase-apply ]; then
               echo "⚠️  Detected leftover rebase state, aborting..."
               git rebase --abort 2>/dev/null || true
@@ -53,7 +51,6 @@ jobs:
 
             git pull --rebase origin relay
 
-            # Find oldest queue file
             QUEUE_FILE=$(ls -t queue/ 2>/dev/null | head -1)
             if [ -z "$QUEUE_FILE" ]; then
               sleep 5
@@ -64,7 +61,19 @@ jobs:
             QUEUE_PATH="queue/$QUEUE_FILE"
             RESP_PATH="response/${REQ_ID}.json"
 
-            # Read the encrypted payload
+            # ★ Skip if response already exists (avoid duplicate processing)
+            if [ -f "$RESP_PATH" ]; then
+              echo "--> Response already exists for $REQ_ID, removing queue file only"
+              rm -f "$QUEUE_PATH"
+              git rm --cached "$QUEUE_PATH" 2>/dev/null || true
+              git add "$QUEUE_PATH" 2>/dev/null || true
+              git commit -m "Remove already-processed $REQ_ID" || true
+              git pull --rebase origin relay
+              git push origin relay
+              sleep 2
+              continue
+            fi
+
             LINE=$(cat "$QUEUE_PATH")
             ENC_PAYLOAD=$(echo "$LINE" | jq -r '.e')
             REQ_JSON=$(echo "$ENC_PAYLOAD" | python3 crypto_tool.py decrypt 2>/dev/null || echo "")
@@ -74,7 +83,6 @@ jobs:
             REQ_HEADERS=$(echo "$REQ_JSON" | jq -r '.headers // {}')
             REQ_BODY_B64=$(echo "$REQ_JSON" | jq -r '.body_base64 // ""')
 
-            # Validation: if decryption failed or id is missing, move to failed/
             if [ -z "$REQ_ID_DEC" ] || [ "$REQ_ID_DEC" = "null" ] || [ -z "$REQ_URL" ] || [ "$REQ_URL" = "null" ]; then
               echo "!! Decryption failed or malformed request, moving to failed/"
               mv "$QUEUE_PATH" "failed/$QUEUE_FILE"
@@ -94,25 +102,21 @@ jobs:
               set -euo pipefail
 
               # Prepare curl command – use header file to avoid quoting issues
-              # Write headers into a file (one "Key: Value" per line)
               echo "$REQ_HEADERS" | jq -r 'to_entries[] | select(.key | ascii_downcase | IN("host","content-length","connection") | not) | "\(.key): \(.value)"' > headers.txt
 
               CURL_CMD="curl -s -o resp.tmp -w \"%{http_code}\" -D resp_headers.txt -L --max-time 30"
               if [ "$REQ_METHOD" != "GET" ]; then
                 CURL_CMD="$CURL_CMD -X $REQ_METHOD"
               fi
-              # Attach headers from file (curl 7.55+)
               if [ -s headers.txt ]; then
                 CURL_CMD="$CURL_CMD -H @headers.txt"
               fi
-              # Add body if present
               if [ -n "$REQ_BODY_B64" ] && [ "$REQ_BODY_B64" != "null" ]; then
                 echo "$REQ_BODY_B64" | base64 -d > body.tmp
                 CURL_CMD="$CURL_CMD --data-binary @body.tmp"
               fi
               CURL_CMD="$CURL_CMD \"$REQ_URL\""
 
-              # Execute the target request
               HTTP_CODE=$(eval "$CURL_CMD" || echo "000")
 
               if [ "$HTTP_CODE" = "000" ] || [ ! -f resp.tmp ]; then
@@ -134,8 +138,9 @@ jobs:
                   > "$RESP_PATH"
               fi
 
-              # Remove the queue file and stage changes
+              # ★ Always delete the queue file
               rm -f "$QUEUE_PATH"
+
               git add "$RESP_PATH"
               if [ -f "$QUEUE_PATH" ]; then
                 git rm "$QUEUE_PATH"
@@ -146,7 +151,6 @@ jobs:
               if ! git diff --cached --quiet; then
                 git commit -m "Processed $REQ_ID_DEC"
 
-                # Push with retry
                 PUSH_SUCCESS=false
                 for i in 1 2 3; do
                   if git pull --rebase origin relay && git push origin relay; then
@@ -157,7 +161,12 @@ jobs:
                   git rebase --abort 2>/dev/null || true
                   git fetch origin relay
                   git reset --hard origin/relay
-                  # Re-apply: the queue file is already gone locally, just re-add response
+
+                  # ★ Re‑apply: remove the queue file (it may be back from reset)
+                  if [ -f "$QUEUE_PATH" ]; then
+                    rm -f "$QUEUE_PATH"
+                    git rm --cached "$QUEUE_PATH" 2>/dev/null || true
+                  fi
                   if [ -f "$RESP_PATH" ]; then
                     git add "$RESP_PATH"
                     git commit -m "Processed $REQ_ID_DEC" || true
