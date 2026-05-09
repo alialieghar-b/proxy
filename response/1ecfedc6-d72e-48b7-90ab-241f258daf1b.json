@@ -1,0 +1,23 @@
+{
+  "s": 200,
+  "b": "VJC6FIZsRi3l7dbyQA639HhrvcDBTgd9+Zs9l2NjwVvSiomhn5wJXYUNX/xixwFjMIaqEQ0okvPgbiNimsqfyXWGUrWxEy/u0t3n+0PlJtBkU+hSpA3bH7m8bbhPwrb8m5SFToIuYmpNDIxJrYIm7iQbD41iDyijF30JKrCv+upAH9oMWcaKyKtMAuR10A4huo61N5tfzFK9zL5WNCaTx6Xwt8QhSWIP2e19nOdahQAq0jbEz/cqq1nSBmfoUL9KNI6bREKDt1nKFwbURE+6GhBg9HDRw2IdNtFJAnbpKI5DaC7gldSqBL1sfSsDhvvVtSPV/EYqmYg3kLDwElWDyumlbOFr18rRPxLRmbIn6Jh79AwQPKSdUwkKhuTnqCDMstvgDT4wlpdaDn/f7IMWR1NxN5ahMp9nGfePvRMAtHfrFiXHRd1tGZw36dXZPGgja89LCHMFO2IFxVgBrEn2roLHol0rz2+9sejiXMfZ6ildE0v9tREwo9Kq8PK2rj5pEMSp0v5tJEtASPRwys+0A2Zmj/Y5PL12xACnLviHg8exBaKDkB+jDanztsNhnUeAz8cP9+Ta7HQmVqfnO2dKxF0tqc8HDBfwzN+ipmnujhKbs84go5m12YtcL3OXjxX9nTQdeB8Ec6MJg+JWxZZQKmy5b0fytKDoQpRMtHoqVP75MCitrvquYPM7SxwD6ElXFplrNyp3E8EL7hm/7/pIf+Q+e+LBtrgONh4pPIDsv6WlUW6SLT+fDk1hEPysoJBMCm1szXBvbJZV/J1OPlDr9CqG0MRk2DbAYpE5jjHjc21s3N9Z0iZHQ/sugxO0AMXn94LUGP/XgSZGogIaES9MKKDuQixzanKjYOOE44fL6GQ7vbctlKrTBssahOllBSSQTBcDIaOolva9RaQEC2jK50Kan3yREOVbN/QchcWjhYmF1L6wH/JBZnQ8a7qTyRhKTm3JdPsut8v45cwr/b1uRBUkOU7uL8id2UAcp8ZhwL2hkQQCpy05G7U8oW2CKZx+DZeD4JcnjjYmevHMV9Bym1drRZhUxlwUeMrTW6tZ6/B7tRnc/FoQUg7flG+IpDGZtYolgaOg8Wj+Z6Y4s/H5DjN8DL4EZF9j7LhZ0pqB+UDUy6OACfT7hUIKa2B2E3gFZuQCLlGA4PnBim0t02Tqd4TAhvaVf9Jvjw/Bitl4v8HxcBQSXS3LR+lGeyTITXnshSJ7luGZwToN91cHU2AnsuvvcoYlT1s6KQayvvFdEleZIcHMu2n1WdFXE9GBc01SIhV5OXN/fgBL8ztpOglKweMwgbALdpsgt09TTnrumf9zNlKRMUvGOSE0s+MNANeg2rs=",
+  "h": {
+    "date": "Sat, 09 May 2026 06:22:11 GMT",
+    "pragma": "no-cache",
+    "expires": "-1",
+    "cache-control": "no-cache, must-revalidate",
+    "content-type": "text/javascript; charset=UTF-8",
+    "strict-transport-security": "max-age=31536000",
+    "content-security-policy": "object-src 'none';base-uri 'self';script-src 'nonce-vwQiEu4nhilkb3WKd-ZaXQ' 'strict-dynamic' 'report-sample' 'unsafe-eval' 'unsafe-inline' https: http:;report-uri https://csp.withgoogle.com/csp/gws/cdt1",
+    "cross-origin-opener-policy": "same-origin-allow-popups; report-to=\"gws\"",
+    "report-to": "{\"group\":\"gws\",\"max_age\":2592000,\"endpoints\":[{\"url\":\"https://csp.withgoogle.com/csp/report-to/gws/cdt1\"}]}",
+    "accept-ch": "Sec-CH-UA-WoW64",
+    "permissions-policy": "unload=()",
+    "content-disposition": "attachment; filename=\"f.txt\"",
+    "content-encoding": "br",
+    "server": "gws",
+    "x-xss-protection": "0",
+    "x-frame-options": "SAMEORIGIN",
+    "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+  }
+}
