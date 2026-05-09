@@ -1,0 +1,23 @@
+{
+  "s": 200,
+  "b": "Nj4ELdlF4P7mLY0oX8AuTmve1YvE6ol60iR+N9FGAPKMEYO2nJQuy1/J4S5KgiHXeQYOx1CYevMZDaEh5ObcE5cUAah33XZRB0uC9k5cM+39SQd6VZawVC04Xlbu50zcZjgO/TKKBvcK+Maffq1OPqmvQ7GjflN7MkUQ2wusYkggYpUxBkpQu8A6ueTo+aWvpCqYfIsZHvFS4Azu+fLouQzhKEWRZMAcFmG7AGnpUGrCWgOGV+kBxkD9WT/hyOWGYQM3qn43DS7eM6cxJkycTRAjs1RN1Zsa18gxpEIeeWKzEeEvO3aXBfsBSFZClwUVUscAZP4nYSLrausQlG0L37lNBe1phNq3znJewVfXaXHD3mq1XZaUWRgzhUKH6fiqzyV7HLGx7LRebNG6rMz+kgSZQYIQ19v7Z1YHtApwweBZsFYm/nNISqUr47Me+agEm4bU3r5KqVZJhkmxVJGzENBzGUEytwIRu0g2ClXcquJ9a0YSDAasmDA2ik+lCtFo0Vkikdp0Lf6A888vKHsZkVTLgTuFt2nwj3SVVrx6OuTcKJvdLZkZx+4TNWMgFl3me5rRJ7Twh1pIz9NgaW1F9R7kY1/b8ytPhKflBMQdEppNgymVkzn/PJWIZ0R1pefKiaZqb2aaGyL0ZA2xQZTD+xBJhzw8Mqb2LdyJComhhhnTrm8OYTPtG+we+yXGikOksQkfmzfqYyKekjY56mYcSK5UtV8tx9DQtoYUwxUiUItxYOliLnTu3utNsi7QAXWKTA4opkrt0cuXl9Nl7eb4ao4J3xRiTeZuA5GSpr/aG4KrPqC7xmeDpJ2zvupfx+vyvUYe3VX1w4XxdX1nA9ujtDsjlbploNe6VUqXkNgp4cO06MwfxSe5keO2DGova3psEtCOBB8QA91lQs0rsaTtYjMQqLh+neOLRbSFVg==",
+  "h": {
+    "date": "Sat, 09 May 2026 07:37:27 GMT",
+    "pragma": "no-cache",
+    "expires": "-1",
+    "cache-control": "no-cache, must-revalidate",
+    "content-type": "text/javascript; charset=UTF-8",
+    "strict-transport-security": "max-age=31536000",
+    "content-security-policy": "object-src 'none';base-uri 'self';script-src 'nonce-PHggBaOYlhaOeV7L1ZWcYg' 'strict-dynamic' 'report-sample' 'unsafe-eval' 'unsafe-inline' https: http:;report-uri https://csp.withgoogle.com/csp/gws/cdt1",
+    "cross-origin-opener-policy": "same-origin-allow-popups; report-to=\"gws\"",
+    "report-to": "{\"group\":\"gws\",\"max_age\":2592000,\"endpoints\":[{\"url\":\"https://csp.withgoogle.com/csp/report-to/gws/cdt1\"}]}",
+    "accept-ch": "Sec-CH-Prefers-Color-Scheme, Downlink, RTT, Sec-CH-UA-Form-Factors, Sec-CH-UA-Platform, Sec-CH-UA-Platform-Version, Sec-CH-UA-Full-Version, Sec-CH-UA-Arch, Sec-CH-UA-Model, Sec-CH-UA-Bitness, Sec-CH-UA-Full-Version-List, Sec-CH-UA-WoW64",
+    "permissions-policy": "unload=()",
+    "content-disposition": "attachment; filename=\"f.txt\"",
+    "content-encoding": "br",
+    "server": "gws",
+    "x-xss-protection": "0",
+    "x-frame-options": "SAMEORIGIN",
+    "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+  }
+}
