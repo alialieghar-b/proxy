@@ -3,7 +3,7 @@
 github_api_worker.py – lightweight relay worker using only the GitHub REST API.
 
 Eliminates all git operations. The worker runs in an endless loop:
-1. List queue/ directory, pick the oldest file.
+1. List queue/ directory (ALL pages), pick the oldest file.
 2. Download encrypted request via API.
 3. Decrypt, fetch the real URL, encrypt the response.
 4. PUT the encrypted response file, DELETE the queue file.
@@ -92,18 +92,31 @@ def api_get(path, **kwargs):
     return resp.json()
 
 def api_list_dir(path):
-    """List directory contents; returns list of {name, ...} or empty list."""
-    url = f"{API_BASE}/contents/{path}?ref={BRANCH}"
-    resp = requests.get(url, headers=HEADERS)
-    if resp.status_code == 404:
-        return []
-    if resp.status_code != 200:
-        raise Exception(f"LIST {path}: {resp.status_code} {resp.text}")
-    data = resp.json()
-    if not isinstance(data, list):
-        # single file returned – shouldn't happen for a directory
-        return [data]
-    return data
+    """
+    List directory contents by fetching ALL pages.
+    Returns a list of {name, ...} dicts.
+    """
+    entries = []
+    page = 1
+    while True:
+        url = f"{API_BASE}/contents/{path}?ref={BRANCH}&page={page}&per_page=100"
+        resp = requests.get(url, headers=HEADERS)
+        if resp.status_code == 404:
+            return []
+        if resp.status_code != 200:
+            raise Exception(f"LIST {path} page {page}: {resp.status_code} {resp.text}")
+        data = resp.json()
+        if not isinstance(data, list):
+            return [data]
+        if not data:
+            break  # no more entries
+        entries.extend(data)
+        # Check if there's a next page via Link header
+        link = resp.headers.get("Link", "")
+        if 'rel="next"' not in link:
+            break
+        page += 1
+    return entries
 
 def put_file(path, content_str, message):
     """Create a new file via PUT (fails if already exists)."""
@@ -146,17 +159,16 @@ def worker_loop():
     print("🚀 API worker started")
     while True:
         try:
-            # 1. List queue/ directory
+            # 1. List ALL queue/ directory entries
             entries = api_list_dir("queue")
             if not entries:
                 time.sleep(2)
                 continue
 
-            # Pick oldest file (alphabetical order = chronological order
-            # because addon now prefixes timestamps).
+            # Pick oldest file (alphabetical order = chronological order)
             entries.sort(key=lambda e: e["name"])
             oldest = entries[0]
-            queue_name = oldest["name"]  # e.g. "1712345678000001-abc123.json"
+            queue_name = oldest["name"]
             queue_path = f"queue/{queue_name}"
             response_path = f"response/{queue_name}"
 
@@ -170,7 +182,6 @@ def worker_loop():
             # 2. Download & decrypt request
             file_info = api_get(queue_path)
             if file_info is None:
-                # file disappeared between list and get – skip
                 continue
             raw_content = base64.b64decode(file_info["content"]).decode("utf-8")
             envelope = json.loads(raw_content)
@@ -198,7 +209,6 @@ def worker_loop():
                 else:
                     body_data = None
 
-                # requests automatically handles Content‑Encoding and decompression
                 fetch_resp = requests.request(
                     method=method,
                     url=url,
@@ -208,7 +218,7 @@ def worker_loop():
                     allow_redirects=True,
                 )
                 http_code = fetch_resp.status_code
-                resp_body = fetch_resp.content  # already decompressed
+                resp_body = fetch_resp.content
                 resp_headers = dict(fetch_resp.headers)
             except Exception as e:
                 print(f"!! Fetch failed for {queue_name}: {e}")
@@ -230,7 +240,6 @@ def worker_loop():
                 put_file(response_path, response_str, f"Processed {queue_name}")
             except Exception as e:
                 print(f"!! Failed to PUT response for {queue_name}: {e}")
-                # still delete the queue file to avoid infinite loop
                 delete_file_safe(queue_path, f"Failed to create response {queue_name}")
                 continue
 
