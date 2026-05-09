@@ -6,7 +6,7 @@ Eliminates all git operations. The worker runs in an endless loop:
 1. List queue/ directory (ALL pages), pick the oldest file.
 2. Download encrypted request via API.
 3. Decrypt, fetch the real URL, encrypt the response.
-4. PUT the encrypted response file, DELETE the queue file.
+4. PUT the encrypted response file (with retry on 409), DELETE the queue file.
 
 Authentication: GITHUB_TOKEN environment variable (provided by Actions).
 Encryption key: ENCRYPTION_KEY env var (same 64‑char hex string as the addon).
@@ -118,18 +118,32 @@ def api_list_dir(path):
         page += 1
     return entries
 
-def put_file(path, content_str, message):
-    """Create a new file via PUT (fails if already exists)."""
+def put_file_safe(path, content_str, message, retries=3):
+    """
+    Create or update a file.  If a 409 conflict occurs,
+    re-fetch the SHA and retry.
+    """
     url = f"{API_BASE}/contents/{path}"
-    payload = {
-        "message": message,
-        "content": base64.b64encode(content_str.encode("utf-8")).decode("utf-8"),
-        "branch": BRANCH,
-    }
-    resp = requests.put(url, headers=HEADERS, json=payload)
-    if resp.status_code not in (200, 201):
-        raise Exception(f"PUT {path}: {resp.status_code} {resp.text}")
-    return resp.json()
+    for attempt in range(1, retries + 1):
+        # Get current SHA if file already exists, otherwise None
+        existing = api_get(path)
+        sha = existing["sha"] if existing is not None else None
+        payload = {
+            "message": message,
+            "content": base64.b64encode(content_str.encode("utf-8")).decode("utf-8"),
+            "branch": BRANCH,
+        }
+        if sha:
+            payload["sha"] = sha
+        resp = requests.put(url, headers=HEADERS, json=payload)
+        if resp.status_code in (200, 201):
+            return resp.json()
+        elif resp.status_code == 409:
+            print(f"⚠️ PUT {path} conflict, retrying ({attempt}/{retries})")
+            time.sleep(0.5)
+        else:
+            raise Exception(f"PUT {path}: {resp.status_code} {resp.text}")
+    raise Exception(f"PUT {path}: failed after {retries} retries")
 
 def delete_file_safe(path, message, retries=3):
     """Delete a file by path, with SHA re‑fetch on 409."""
@@ -235,9 +249,9 @@ def worker_loop():
             }
             response_str = json.dumps(response_dict)
 
-            # 5. PUT response file
+            # 5. PUT response file safely (retries on 409)
             try:
-                put_file(response_path, response_str, f"Processed {queue_name}")
+                put_file_safe(response_path, response_str, f"Processed {queue_name}")
             except Exception as e:
                 print(f"!! Failed to PUT response for {queue_name}: {e}")
                 delete_file_safe(queue_path, f"Failed to create response {queue_name}")
