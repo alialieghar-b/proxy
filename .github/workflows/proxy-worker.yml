@@ -2,7 +2,7 @@ name: 🔁 Proxy Worker (always‑on)
 
 on:
   schedule:
-    - cron: '0 */6 * * *'   # Every 6 hours
+    - cron: '0 */6 * * *'
   workflow_dispatch:
 
 concurrency:
@@ -26,10 +26,10 @@ jobs:
       - name: 🔁 Proxy loop
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
         run: |
           set -euo pipefail
 
-          # Configure git
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
@@ -41,69 +41,82 @@ jobs:
 
           while [ $SECONDS -lt 21000 ]; do
 
-            # ★ PULL latest changes from remote ★
             git pull --rebase origin main
 
-            # If no queue file or empty, wait and retry
             if [ ! -f queue.jsonl ] || [ ! -s queue.jsonl ]; then
               sleep 5
               continue
             fi
 
-            # Read the first line
             LINE=$(head -n 1 queue.jsonl)
             if [ -z "$LINE" ]; then
               sleep 5
               continue
             fi
 
-            REQ_ID=$(echo "$LINE" | jq -r '.id')
-            REQ_URL=$(echo "$LINE" | jq -r '.url')
-            REQ_METHOD=$(echo "$LINE" | jq -r '.method // "GET"')
+            # Decode the encrypted request
+            ENC_PAYLOAD=$(echo "$LINE" | jq -r '.e')
+            REQ_JSON=$(echo "$ENC_PAYLOAD" | python3 crypto_tool.py decrypt)
+            REQ_ID=$(echo "$REQ_JSON" | jq -r '.id')
+            REQ_URL=$(echo "$REQ_JSON" | jq -r '.url')
+            REQ_METHOD=$(echo "$REQ_JSON" | jq -r '.method // "GET"')
+            REQ_HEADERS=$(echo "$REQ_JSON" | jq -r '.headers // {}')
+            REQ_BODY_B64=$(echo "$REQ_JSON" | jq -r '.body_base64 // ""')
 
             echo "==> Processing $REQ_ID: $REQ_METHOD $REQ_URL"
             sleep 1
 
-            # Process request in a subshell so a single error doesn't crash the loop
             (
               set -euo pipefail
 
-              # Fetch the URL, following redirects (HTTP → HTTPS)
-              HTTP_CODE=$(curl -s -o resp.tmp -w "%{http_code}" \
-                -D resp_headers.txt \
-                -L \
-                --max-time 30 \
-                "$REQ_URL" || echo "000")
+              # Prepare curl command
+              CURL_CMD="curl -s -o resp.tmp -w \"%{http_code}\" -D resp_headers.txt -L --max-time 30"
+              # Add method
+              if [ "$REQ_METHOD" != "GET" ]; then
+                CURL_CMD="$CURL_CMD -X $REQ_METHOD"
+              fi
+              # Add headers from JSON (skip a few)
+              echo "$REQ_HEADERS" | jq -r 'to_entries[] | select(.key | ascii_downcase | IN("host","content-length","connection") | not) | "-H \"\(.key): \(.value)\""' > curl_headers.txt
+              if [ -s curl_headers.txt ]; then
+                while read -r hdr; do
+                  CURL_CMD="$CURL_CMD $hdr"
+                done < curl_headers.txt
+              fi
+              # Add body if present
+              if [ -n "$REQ_BODY_B64" ] && [ "$REQ_BODY_B64" != "null" ]; then
+                echo "$REQ_BODY_B64" | base64 -d > body.tmp
+                CURL_CMD="$CURL_CMD --data-binary @body.tmp"
+              fi
+              CURL_CMD="$CURL_CMD \"$REQ_URL\""
 
-              # Treat missing response file as failure
+              # Execute
+              HTTP_CODE=$(eval "$CURL_CMD" || echo "000")
+
               if [ "$HTTP_CODE" = "000" ] || [ ! -f resp.tmp ]; then
-                echo "!! Fetch failed for $REQ_ID (HTTP $HTTP_CODE, tempfile missing: $([ ! -f resp.tmp ] && echo yes || echo no))"
+                echo "!! Fetch failed for $REQ_ID"
+                # Create error response (encrypted empty body)
+                ENC_EMPTY=$(echo -n "" | python3 crypto_tool.py encrypt)
                 jq -n \
                   --arg status "502" \
-                  --arg body "" \
-                  --arg error "curl fetch failed" \
-                  '{status: $status|tonumber, body_base64: $body, headers: {}, error: $error}' \
+                  --arg body "$ENC_EMPTY" \
+                  '{s: $status|tonumber, b: $body, h: {}}' \
                   > "response_${REQ_ID}.json"
               else
-                BODY_B64=$(base64 -w0 resp.tmp)
-
-                # Build headers JSON using the external Python script
+                # Encrypt the response body
+                ENC_BODY=$(python3 crypto_tool.py encrypt < resp.tmp)
                 HEADERS_JSON=$(python3 parse_headers.py)
-
                 jq -n \
                   --arg status "$HTTP_CODE" \
-                  --arg body "$BODY_B64" \
+                  --arg body "$ENC_BODY" \
                   --argjson headers "$HEADERS_JSON" \
-                  '{status: $status|tonumber, body_base64: $body, headers: $headers}' \
+                  '{s: $status|tonumber, b: $body, h: $headers}' \
                   > "response_${REQ_ID}.json"
               fi
 
-              # Remove the processed line from queue
+              # Remove processed line from queue
               tail -n +2 queue.jsonl > queue_temp && mv queue_temp queue.jsonl
 
-              # Stage and commit
               git add "response_${REQ_ID}.json" queue.jsonl
-
               if ! git diff --cached --quiet; then
                 git commit -m "Processed $REQ_ID"
                 git pull --rebase
