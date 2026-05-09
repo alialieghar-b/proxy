@@ -200,6 +200,21 @@ jobs:
               fi
             ) || echo "!! Request $REQ_ID_DEC failed, but worker continues"
 
+            # ★ Safety net: if the response file still doesn't exist (worker crashed), create a 502 placeholder
+            if [ ! -f "$RESP_PATH" ]; then
+              echo "⚠️  Response file was not created, writing emergency 502"
+              ENC_EMPTY=$(echo -n "" | python3 crypto_tool.py encrypt)
+              echo "{}" > empty_headers.json
+              echo "$ENC_EMPTY" > enc_body.txt
+              python3 build_response.py 502 empty_headers.json enc_body.txt "$RESP_PATH"
+              git add "$RESP_PATH"
+              if [ -f "$QUEUE_PATH" ]; then
+                git rm "$QUEUE_PATH" 2>/dev/null || rm -f "$QUEUE_PATH"
+              fi
+              git commit -m "Emergency placeholder for $REQ_ID_DEC" || true
+              git pull --rebase origin relay && git push origin relay
+            fi
+
             sleep 2
           done
 
