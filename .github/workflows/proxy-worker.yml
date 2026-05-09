@@ -101,12 +101,14 @@ jobs:
             (
               set -euo pipefail
 
-              # ★ If filter_headers.py is missing on relay, pull it from main
-              if [ ! -f filter_headers.py ]; then
-                echo "⚙️  filter_headers.py not found on relay branch, pulling from main..."
-                git fetch origin main
-                git checkout origin/main -- filter_headers.py
-              fi
+              # ★ If helper scripts are missing on relay, pull them from main
+              for script in filter_headers.py build_response.py; do
+                if [ ! -f "$script" ]; then
+                  echo "⚙️  $script not found on relay branch, pulling from main..."
+                  git fetch origin main
+                  git checkout origin/main -- "$script"
+                fi
+              done
 
               echo "$REQ_HEADERS" > headers.json
               python3 filter_headers.py headers.json headers.txt
@@ -130,20 +132,18 @@ jobs:
               if [ "$HTTP_CODE" = "000" ] || [ ! -f resp.tmp ]; then
                 echo "!! Fetch failed for $REQ_ID_DEC"
                 ENC_EMPTY=$(echo -n "" | python3 crypto_tool.py encrypt)
-                jq -n \
-                  --arg status "502" \
-                  --arg body "$ENC_EMPTY" \
-                  '{s: $status|tonumber, b: $body, h: {}}' \
-                  > "$RESP_PATH"
+                # Build response with empty encrypted body using Python (no jq)
+                echo "{}" > empty_headers.json
+                echo "$ENC_EMPTY" > enc_body.txt
+                python3 build_response.py 502 empty_headers.json enc_body.txt "$RESP_PATH"
               else
                 ENC_BODY=$(python3 crypto_tool.py encrypt < resp.tmp)
                 HEADERS_JSON=$(python3 parse_headers.py)
-                jq -n \
-                  --arg status "$HTTP_CODE" \
-                  --arg body "$ENC_BODY" \
-                  --argjson headers "$HEADERS_JSON" \
-                  '{s: $status|tonumber, b: $body, h: $headers}' \
-                  > "$RESP_PATH"
+                # Write headers JSON to file for build_response.py
+                echo "$HEADERS_JSON" > resp_headers.json
+                echo "$ENC_BODY" > enc_body.txt
+                # Build the final response JSON with Python – avoids "Argument list too long"
+                python3 build_response.py "$HTTP_CODE" resp_headers.json enc_body.txt "$RESP_PATH"
               fi
 
               # Remove the queue file locally
