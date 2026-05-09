@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-github_api_worker.py – fast relay worker using the GitHub REST API.
+github_api_worker.py – high‑throughput relay worker using the GitHub REST API.
 
-- Parallel fetches of real URLs (thread pool, batch size 10).
-- Responses are uploaded individually with safe retry; queue files are
-  deleted after upload.  No more Git Data API atomic commits – avoids
-  conflicts with auto‑merge workflows.
-- Timeouts on every HTTP request so the worker never hangs.
+- Parallel downloads of queue files (thread pool).
+- Parallel fetches of real URLs (thread pool, batch size 20).
+- Parallel uploads of responses (thread pool, limited to 10 writers).
+- Safe retry on PUT/DELETE conflicts.
+- Timeouts on every HTTP request.
 - Line‑buffered output for real‑time logging in GitHub Actions.
 
 Authentication: GITHUB_TOKEN environment variable (provided by Actions).
@@ -48,7 +48,7 @@ API_BASE = f"https://api.github.com/repos/{REPO}"
 HEADERS = {
     "Authorization": f"token {TOKEN}",
     "Accept": "application/vnd.github.v3+json",
-    "User-Agent": "gh-relay-worker/3.1",
+    "User-Agent": "gh-relay-worker/4.0",
 }
 
 # ------------------------------------------------------------------ session helpers with timeout
@@ -166,7 +166,48 @@ def delete_file_safe(path, message, retries=3):
             raise Exception(f"DELETE {path}: {resp.status_code}")
     raise Exception(f"DELETE {path}: failed after retries")
 
-# ------------------------------------------------------------------ fetch helper (executed in threads)
+# ------------------------------------------------------------------ fetch helpers (executed in threads)
+def download_and_decrypt(queue_name):
+    """Download and decrypt a single queue file. Returns request dict or skip/malformed marker."""
+    queue_path = f"queue/{queue_name}"
+    response_path = f"response/{queue_name}"
+    try:
+        # Check if response already exists
+        existing = api_get(response_path)
+        if existing is not None:
+            return {"queue_name": queue_name, "skip": True}
+
+        file_info = api_get(queue_path)
+        if file_info is None:
+            return {"queue_name": queue_name, "skip": True}  # vanished
+
+        raw = base64.b64decode(file_info["content"]).decode("utf-8")
+        env = json.loads(raw)
+        enc_payload = env["e"]
+        req_json = decrypt(enc_payload)
+        req = json.loads(req_json)
+
+        method = req.get("method", "GET")
+        url = req.get("url", "")
+        headers = filter_headers(req.get("headers", {}))
+        body_b64 = req.get("body_base64") or ""
+
+        if not url:
+            return {"queue_name": queue_name, "malformed": True}
+
+        body_data = base64.b64decode(body_b64) if body_b64 and body_b64 != "null" else None
+
+        return {
+            "queue_name": queue_name,
+            "method": method,
+            "url": url,
+            "headers": headers,
+            "body_data": body_data,
+        }
+    except Exception as e:
+        print(f"  !! background download/decrypt failed for {queue_name}: {e}")
+        return {"queue_name": queue_name, "malformed": True}
+
 def fetch_real_url(method, url, headers, body_data):
     try:
         resp = requests.request(
@@ -182,9 +223,27 @@ def fetch_real_url(method, url, headers, body_data):
         print(f"  !! background fetch failed for {url}: {e}")
         return (502, b"", {})
 
+def upload_response(queue_name, code, body, resp_headers):
+    """Build response JSON and PUT it, then DELETE the queue file. Called in thread."""
+    enc_body = encrypt(body)
+    resp_obj = {"s": code, "b": enc_body, "h": resp_headers}
+    content_str = json.dumps(resp_obj)
+    put_file_safe(f"response/{queue_name}", content_str, f"Processed {queue_name}")
+    delete_file_safe(f"queue/{queue_name}", f"Remove {queue_name}")
+    print(f"--> Done {queue_name}")
+
+def cleanup_skip_or_malformed(queue_name, kind):
+    """Delete the queue file for already-processed or malformed requests."""
+    if kind == "skip":
+        delete_file_safe(f"queue/{queue_name}", f"Remove already-processed {queue_name}")
+        print(f"--> Cleaned up already-processed {queue_name}")
+    else:
+        delete_file_safe(f"queue/{queue_name}", f"Remove malformed {queue_name}")
+        print(f"--> Removed malformed {queue_name}")
+
 # ------------------------------------------------------------------ worker loop
 def worker_loop():
-    print("🚀 Fast API worker started (parallel fetches + single‑file uploads)")
+    print("🚀 High‑throughput API worker started (parallel everything)")
     print("💓 Initial heartbeat")
     last_heartbeat = time.time()
     empty_since = None
@@ -205,69 +264,41 @@ def worker_loop():
 
             empty_since = None
             entries.sort(key=lambda e: e["name"])
-            # Take up to 10 oldest
-            batch = entries[:10]
+            batch = entries[:20]
+            batch_names = [e["name"] for e in batch]
+
+            # 2. Parallel download & decrypt all queue files
             reqs = []
-
-            # 2. Download & decrypt all requests in the batch (serial, fast)
-            for e in batch:
-                queue_name = e["name"]
-                queue_path = f"queue/{queue_name}"
-                response_path = f"response/{queue_name}"
-
-                # Skip if response already exists
-                existing = api_get(response_path)
-                if existing is not None:
-                    print(f"--> Response already exists for {queue_name}, removing queue file")
-                    reqs.append({"queue_name": queue_name, "skip": True})
-                    continue
-
-                file_info = api_get(queue_path)
-                if file_info is None:
-                    continue
-
-                raw = base64.b64decode(file_info["content"]).decode("utf-8")
-                env = json.loads(raw)
-                enc_payload = env["e"]
-                req_json = decrypt(enc_payload)
-                req = json.loads(req_json)
-
-                req_id = req.get("id", "")
-                method = req.get("method", "GET")
-                url = req.get("url", "")
-                headers = filter_headers(req.get("headers", {}))
-                body_b64 = req.get("body_base64") or ""
-
-                if not url:
-                    print(f"!! Malformed request {queue_name}, will delete")
-                    reqs.append({"queue_name": queue_name, "malformed": True})
-                    continue
-
-                try:
-                    body_data = base64.b64decode(body_b64) if body_b64 and body_b64 != "null" else None
-                except Exception:
-                    body_data = b""
-
-                reqs.append({
-                    "queue_name": queue_name,
-                    "method": method,
-                    "url": url,
-                    "headers": headers,
-                    "body_data": body_data,
-                })
+            with ThreadPoolExecutor(max_workers=10) as dl_executor:
+                futures = {
+                    dl_executor.submit(download_and_decrypt, name): name
+                    for name in batch_names
+                }
+                for future in as_completed(futures):
+                    result = future.result()
+                    if result:
+                        reqs.append(result)
 
             if not reqs:
                 continue
 
-            # Separate entries that need actual fetch
+            # Separate skip/malformed from real requests
             to_fetch = [r for r in reqs if "method" in r]
+            skip_or_malformed = [r for r in reqs if "skip" in r or "malformed" in r]
 
+            # ---- Cleanup skip/malformed (parallel, limited) ----
+            if skip_or_malformed:
+                with ThreadPoolExecutor(max_workers=10) as cl_executor:
+                    for r in skip_or_malformed:
+                        kind = "skip" if "skip" in r else "malformed"
+                        cl_executor.submit(cleanup_skip_or_malformed, r["queue_name"], kind)
+
+            # ---- Fetch all real URLs in parallel ----
             results = {}
-            # 3. Parallel fetch for real requests (up to 10 threads)
             if to_fetch:
-                with ThreadPoolExecutor(max_workers=10) as executor:
+                with ThreadPoolExecutor(max_workers=20) as fetch_executor:
                     futures = {
-                        executor.submit(
+                        fetch_executor.submit(
                             fetch_real_url,
                             r["method"],
                             r["url"],
@@ -284,25 +315,13 @@ def worker_loop():
                             code, body, resp_headers = 502, b"", {}
                         results[qname] = (code, body, resp_headers)
 
-            # 4. Upload responses and delete queue files (serial, safe)
-            for r in reqs:
-                qname = r["queue_name"]
-                try:
-                    if "skip" in r:
-                        delete_file_safe(f"queue/{qname}", f"Remove already-processed {qname}")
-                        print(f"--> Cleaned up already-processed {qname}")
-                    elif "malformed" in r:
-                        delete_file_safe(f"queue/{qname}", f"Remove malformed {qname}")
-                        print(f"--> Removed malformed {qname}")
-                    else:
+            # ---- Upload responses in parallel (limited to 10 writers) ----
+            if to_fetch:
+                with ThreadPoolExecutor(max_workers=10) as up_executor:
+                    for r in to_fetch:
+                        qname = r["queue_name"]
                         code, body, resp_headers = results[qname]
-                        enc_body = encrypt(body)
-                        resp_obj = {"s": code, "b": enc_body, "h": resp_headers}
-                        put_file_safe(f"response/{qname}", json.dumps(resp_obj), f"Processed {qname}")
-                        delete_file_safe(f"queue/{qname}", f"Remove {qname}")
-                        print(f"--> Done {qname}")
-                except Exception as upload_err:
-                    print(f"!! Failed to finalise {qname}: {upload_err}")
+                        up_executor.submit(upload_response, qname, code, body, resp_headers)
 
         except KeyboardInterrupt:
             print("\nWorker stopped.")
