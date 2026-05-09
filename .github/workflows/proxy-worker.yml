@@ -20,7 +20,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main              # get the worker script and any helpers
+          ref: main
           fetch-depth: 1
 
       - name: 🐍 Set up Python
@@ -37,4 +37,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
           BRANCH: relay
-        run: python3 github_api_worker.py
+        run: python3 github_api_worker.py 2>&1
