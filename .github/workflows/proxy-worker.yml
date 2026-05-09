@@ -1,4 +1,4 @@
-name: 🔁 Proxy Worker (file‑per‑request, relay branch)
+name: 🚀 API‑Based Proxy Worker (no git operations)
 
 on:
   schedule:
@@ -10,8 +10,7 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: write
-  actions: write
+  contents: read   # we only read the code from main; the worker uses the token for API calls
 
 jobs:
   worker:
@@ -21,201 +20,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: relay
+          ref: main              # get the worker script and any helpers
           fetch-depth: 1
 
-      - name: 🔁 Proxy loop
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 📦 Install dependencies
+        run: pip install requests cryptography
+
+      - name: 🚀 Run API worker
         env:
+          GITHUB_REPO: ${{ vars.GITHUB_REPO || 'alialieghar-b/proxy' }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
-        run: |
-          set -euo pipefail
-
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          mkdir -p queue response failed
-
-          echo "⏳ Sleeping 5s so you can read logs..."
-          sleep 5
-
-          echo "Worker started at $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
-          echo "Will run for up to 350 minutes..."
-
-          while [ $SECONDS -lt 21000 ]; do
-
-            if [ -d .git/rebase-merge ] || [ -d .git/rebase-apply ]; then
-              echo "⚠️  Detected leftover rebase state, aborting..."
-              git rebase --abort 2>/dev/null || true
-            fi
-
-            git pull --rebase origin relay
-
-            QUEUE_FILE=$(ls -t queue/ 2>/dev/null | head -1)
-            if [ -z "$QUEUE_FILE" ]; then
-              sleep 5
-              continue
-            fi
-
-            REQ_ID="${QUEUE_FILE%.json}"
-            QUEUE_PATH="queue/$QUEUE_FILE"
-            RESP_PATH="response/${REQ_ID}.json"
-
-            # ★ Skip if response already exists (avoid duplicate processing)
-            if [ -f "$RESP_PATH" ]; then
-              echo "--> Response already exists for $REQ_ID, removing queue file only"
-              rm -f "$QUEUE_PATH"
-              git rm --cached "$QUEUE_PATH" 2>/dev/null || true
-              git commit -m "Remove already-processed $REQ_ID" || true
-              git pull --rebase origin relay && git push origin relay
-              sleep 2
-              continue
-            fi
-
-            LINE=$(cat "$QUEUE_PATH")
-            ENC_PAYLOAD=$(echo "$LINE" | jq -r '.e')
-            REQ_JSON=$(echo "$ENC_PAYLOAD" | python3 crypto_tool.py decrypt 2>/dev/null || echo "")
-
-            # ★ Write decrypted JSON to a file, then extract fields with jq to avoid "Argument list too long"
-            echo "$REQ_JSON" > req.json
-            REQ_ID_DEC=$(jq -r '.id // empty' req.json)
-            REQ_URL=$(jq -r '.url // empty' req.json)
-            REQ_METHOD=$(jq -r '.method // "GET"' req.json)
-            REQ_HEADERS=$(jq -r '.headers // {}' req.json)
-            REQ_BODY_B64=$(jq -r '.body_base64 // ""' req.json)
-
-            if [ -z "$REQ_ID_DEC" ] || [ "$REQ_ID_DEC" = "null" ] || [ -z "$REQ_URL" ] || [ "$REQ_URL" = "null" ]; then
-              echo "!! Decryption failed or malformed request, moving to failed/"
-              mv "$QUEUE_PATH" "failed/$QUEUE_FILE"
-              git add "failed/$QUEUE_FILE"
-              git rm --cached "$QUEUE_PATH" 2>/dev/null || true
-              git commit -m "Move malformed request $REQ_ID to failed" || true
-              git pull --rebase origin relay && git push origin relay
-              sleep 2
-              continue
-            fi
-
-            echo "==> Processing $REQ_ID_DEC: $REQ_METHOD $REQ_URL"
-            sleep 1
-
-            (
-              set -euo pipefail
-
-              # ★ If helper scripts are missing on relay, pull them from main
-              for script in filter_headers.py build_response.py; do
-                if [ ! -f "$script" ]; then
-                  echo "⚙️  $script not found on relay branch, pulling from main..."
-                  git fetch origin main
-                  git checkout origin/main -- "$script"
-                fi
-              done
-
-              echo "$REQ_HEADERS" > headers.json
-              python3 filter_headers.py headers.json headers.txt
-
-              # ★ Escape URL to prevent eval from misinterpreting special characters (e.g. $rpc)
-              ESCAPED_URL=$(printf '%q' "$REQ_URL")
-
-              # ★ --compressed makes curl request gzip & decompress automatically
-              CURL_CMD="curl --compressed -s -o resp.tmp -w \"%{http_code}\" -D resp_headers.txt -L --max-time 30"
-              if [ "$REQ_METHOD" != "GET" ]; then
-                CURL_CMD="$CURL_CMD -X $REQ_METHOD"
-              fi
-              if [ -s headers.txt ]; then
-                CURL_CMD="$CURL_CMD -H @headers.txt"
-              fi
-              if [ -n "$REQ_BODY_B64" ] && [ "$REQ_BODY_B64" != "null" ]; then
-                echo "$REQ_BODY_B64" | base64 -d > body.tmp
-                CURL_CMD="$CURL_CMD --data-binary @body.tmp"
-              fi
-              CURL_CMD="$CURL_CMD $ESCAPED_URL"
-
-              HTTP_CODE=$(eval "$CURL_CMD" || echo "000")
-
-              if [ "$HTTP_CODE" = "000" ] || [ ! -f resp.tmp ]; then
-                echo "!! Fetch failed for $REQ_ID_DEC"
-                ENC_EMPTY=$(echo -n "" | python3 crypto_tool.py encrypt)
-                # Build response with empty encrypted body using Python (no jq)
-                echo "{}" > empty_headers.json
-                echo "$ENC_EMPTY" > enc_body.txt
-                python3 build_response.py 502 empty_headers.json enc_body.txt "$RESP_PATH"
-              else
-                ENC_BODY=$(python3 crypto_tool.py encrypt < resp.tmp)
-                HEADERS_JSON=$(python3 parse_headers.py)
-                # Write headers JSON to file for build_response.py
-                echo "$HEADERS_JSON" > resp_headers.json
-                echo "$ENC_BODY" > enc_body.txt
-                # Build the final response JSON with Python – avoids "Argument list too long"
-                python3 build_response.py "$HTTP_CODE" resp_headers.json enc_body.txt "$RESP_PATH"
-              fi
-
-              # Remove the queue file locally
-              rm -f "$QUEUE_PATH"
-
-              git add "$RESP_PATH"
-              if [ -f "$QUEUE_PATH" ]; then
-                git rm "$QUEUE_PATH"
-              else
-                git rm --cached "$QUEUE_PATH" 2>/dev/null || true
-              fi
-
-              if ! git diff --cached --quiet; then
-                git commit -m "Processed $REQ_ID_DEC"
-
-                PUSH_SUCCESS=false
-                for i in 1 2 3; do
-                  if git pull --rebase origin relay && git push origin relay; then
-                    PUSH_SUCCESS=true
-                    break
-                  fi
-                  echo "⚠️  Push attempt $i failed, retrying..."
-                  git rebase --abort 2>/dev/null || true
-                  git fetch origin relay
-                  git reset --hard origin/relay
-
-                  # Re‑apply our changes after reset
-                  if [ -f "$QUEUE_PATH" ]; then
-                    git rm "$QUEUE_PATH" 2>/dev/null || rm -f "$QUEUE_PATH"
-                  fi
-                  if [ -f "$RESP_PATH" ]; then
-                    git add "$RESP_PATH"
-                  fi
-                  if git diff --cached --quiet; then
-                    echo "Nothing to commit after reset."
-                  else
-                    git commit -m "Retry: Processed $REQ_ID_DEC" || true
-                  fi
-                  sleep 2
-                done
-
-                if [ "$PUSH_SUCCESS" = false ]; then
-                  echo "❌ Failed to push after retries, will attempt to commit locally and continue"
-                  if ! git diff --cached --quiet; then
-                    git commit -m "Emergency commit for $REQ_ID_DEC" || true
-                  fi
-                fi
-                echo "--> Response committed for $REQ_ID_DEC"
-              else
-                echo "No changes to commit (possibly already processed)"
-              fi
-            ) || echo "!! Request $REQ_ID_DEC failed, but worker continues"
-
-            # ★ Safety net: if the response file still doesn't exist (worker crashed), create a 502 placeholder
-            if [ ! -f "$RESP_PATH" ]; then
-              echo "⚠️  Response file was not created, writing emergency 502"
-              ENC_EMPTY=$(echo -n "" | python3 crypto_tool.py encrypt)
-              echo "{}" > empty_headers.json
-              echo "$ENC_EMPTY" > enc_body.txt
-              python3 build_response.py 502 empty_headers.json enc_body.txt "$RESP_PATH"
-              git add "$RESP_PATH"
-              if [ -f "$QUEUE_PATH" ]; then
-                git rm "$QUEUE_PATH" 2>/dev/null || rm -f "$QUEUE_PATH"
-              fi
-              git commit -m "Emergency placeholder for $REQ_ID_DEC" || true
-              git pull --rebase origin relay && git push origin relay
-            fi
-
-            sleep 2
-          done
-
-          echo "Worker loop finished (time limit reached). Exiting cleanly."
+          BRANCH: relay
+        run: python3 github_api_worker.py
