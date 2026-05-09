@@ -66,10 +66,8 @@ jobs:
               echo "--> Response already exists for $REQ_ID, removing queue file only"
               rm -f "$QUEUE_PATH"
               git rm --cached "$QUEUE_PATH" 2>/dev/null || true
-              git add "$QUEUE_PATH" 2>/dev/null || true
               git commit -m "Remove already-processed $REQ_ID" || true
-              git pull --rebase origin relay
-              git push origin relay
+              git pull --rebase origin relay && git push origin relay
               sleep 2
               continue
             fi
@@ -89,8 +87,7 @@ jobs:
               git add "failed/$QUEUE_FILE"
               git rm --cached "$QUEUE_PATH" 2>/dev/null || true
               git commit -m "Move malformed request $REQ_ID to failed" || true
-              git pull --rebase origin relay
-              git push origin relay
+              git pull --rebase origin relay && git push origin relay
               sleep 2
               continue
             fi
@@ -101,7 +98,6 @@ jobs:
             (
               set -euo pipefail
 
-              # Prepare curl command – use header file to avoid quoting issues
               echo "$REQ_HEADERS" | jq -r 'to_entries[] | select(.key | ascii_downcase | IN("host","content-length","connection") | not) | "\(.key): \(.value)"' > headers.txt
 
               CURL_CMD="curl -s -o resp.tmp -w \"%{http_code}\" -D resp_headers.txt -L --max-time 30"
@@ -138,9 +134,10 @@ jobs:
                   > "$RESP_PATH"
               fi
 
-              # ★ Always delete the queue file
+              # Remove the queue file locally
               rm -f "$QUEUE_PATH"
 
+              # Stage changes
               git add "$RESP_PATH"
               if [ -f "$QUEUE_PATH" ]; then
                 git rm "$QUEUE_PATH"
@@ -162,24 +159,32 @@ jobs:
                   git fetch origin relay
                   git reset --hard origin/relay
 
-                  # ★ Re‑apply: remove the queue file (it may be back from reset)
+                  # Re‑apply our changes after reset
                   if [ -f "$QUEUE_PATH" ]; then
-                    rm -f "$QUEUE_PATH"
-                    git rm --cached "$QUEUE_PATH" 2>/dev/null || true
+                    git rm "$QUEUE_PATH" 2>/dev/null || rm -f "$QUEUE_PATH"
                   fi
                   if [ -f "$RESP_PATH" ]; then
                     git add "$RESP_PATH"
-                    git commit -m "Processed $REQ_ID_DEC" || true
+                  fi
+                  # Commit the re‑applied changes (if any)
+                  if git diff --cached --quiet; then
+                    echo "Nothing to commit after reset."
+                  else
+                    git commit -m "Retry: Processed $REQ_ID_DEC" || true
                   fi
                   sleep 2
                 done
 
                 if [ "$PUSH_SUCCESS" = false ]; then
-                  echo "❌ Failed to push after retries"
+                  echo "❌ Failed to push after retries, will attempt to commit locally and continue"
+                  # Try to commit anyway so index is clean for next iteration
+                  if ! git diff --cached --quiet; then
+                    git commit -m "Emergency commit for $REQ_ID_DEC" || true
+                  fi
                 fi
                 echo "--> Response committed for $REQ_ID_DEC"
               else
-                echo "No changes to commit"
+                echo "No changes to commit (possibly already processed)"
               fi
             ) || echo "!! Request $REQ_ID_DEC failed, but worker continues"
 
