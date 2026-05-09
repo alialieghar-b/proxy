@@ -6,6 +6,7 @@ github_api_worker.py – high‑throughput relay worker using the GitHub REST AP
 - Parallel fetches of real URLs (thread pool, batch size 20).
 - Parallel uploads of responses (thread pool, limited to 10 writers).
 - Safe retry on PUT/DELETE conflicts.
+- Rate‑limit watchdog prevents 403 errors by sleeping when limits are low.
 - Timeouts on every HTTP request.
 - Line‑buffered output for real‑time logging in GitHub Actions.
 
@@ -92,6 +93,27 @@ def filter_headers(headers: dict) -> dict:
             continue
         cleaned[k] = v
     return cleaned
+
+# ------------------------------------------------------------------ rate‑limit watchdog
+def check_and_wait_for_rate_limit():
+    """Query the GitHub rate‑limit endpoint and sleep if we are about to run out."""
+    try:
+        resp = _request("GET", "https://api.github.com/rate_limit", headers=HEADERS)
+        if resp.status_code != 200:
+            print(f"⚠️ Rate limit check failed: {resp.status_code}")
+            return
+        data = resp.json()
+        core = data.get("resources", {}).get("core", {})
+        remaining = core.get("remaining", 9999)
+        reset = core.get("reset", 0)          # Unix timestamp
+        if remaining < 50:
+            now = time.time()
+            sleep_sec = max(0, reset - now) + 1   # one extra second of safety
+            print(f"⏳ Rate limit low ({remaining} remaining), sleeping {sleep_sec:.0f}s until reset")
+            time.sleep(sleep_sec)
+            print("💓 Rate‑limit window reset, resuming")
+    except Exception as e:
+        print(f"⚠️ Rate limit watchdog error: {e}")
 
 # ------------------------------------------------------------------ GitHub API helpers
 def api_get(path, **kwargs):
@@ -243,15 +265,17 @@ def cleanup_skip_or_malformed(queue_name, kind):
 
 # ------------------------------------------------------------------ worker loop
 def worker_loop():
-    print("🚀 High‑throughput API worker started (parallel everything)")
+    print("🚀 High‑throughput API worker started (parallel everything + rate‑limit watchdog)")
     print("💓 Initial heartbeat")
     last_heartbeat = time.time()
     empty_since = None
 
     while True:
         try:
-            # 1. List all queue entries
+            # 1. List all queue entries, then check rate limit
             entries = api_list_dir("queue")
+            check_and_wait_for_rate_limit()          # ★ prevent 403
+
             if not entries:
                 now = time.time()
                 if empty_since is None:
@@ -322,6 +346,9 @@ def worker_loop():
                         qname = r["queue_name"]
                         code, body, resp_headers = results[qname]
                         up_executor.submit(upload_response, qname, code, body, resp_headers)
+
+            # ★ After heavy API usage, re‑check rate limit before next listing
+            check_and_wait_for_rate_limit()
 
         except KeyboardInterrupt:
             print("\nWorker stopped.")
