@@ -71,7 +71,14 @@ HOP_BY_HOP = {
 }
 
 def filter_headers(headers: dict) -> dict:
-    return {k: v for k, v in headers.items() if k.lower() not in HOP_BY_HOP}
+    """Remove hop‑by‑hop headers and Accept‑Encoding (so requests can handle decompression properly)."""
+    cleaned = {}
+    for k, v in headers.items():
+        lower = k.lower()
+        if lower in HOP_BY_HOP or lower == "accept-encoding":
+            continue
+        cleaned[k] = v
+    return cleaned
 
 # ------------------------------------------------------------------ GitHub API
 def api_get(path, **kwargs):
@@ -111,23 +118,28 @@ def put_file(path, content_str, message):
         raise Exception(f"PUT {path}: {resp.status_code} {resp.text}")
     return resp.json()
 
-def delete_file(path, message):
-    """Delete a file by path (requires the current SHA)."""
-    # First get the file metadata to obtain the SHA
-    info = api_get(path)
-    if info is None:
-        # already gone – fine
-        return
-    sha = info["sha"]
-    url = f"{API_BASE}/contents/{path}"
-    payload = {
-        "message": message,
-        "sha": sha,
-        "branch": BRANCH,
-    }
-    resp = requests.delete(url, headers=HEADERS, json=payload)
-    if resp.status_code not in (200, 204):
-        raise Exception(f"DELETE {path}: {resp.status_code} {resp.text}")
+def delete_file_safe(path, message, retries=3):
+    """Delete a file by path, with SHA re‑fetch on 409."""
+    for attempt in range(1, retries + 1):
+        info = api_get(path)
+        if info is None:
+            return  # already gone
+        sha = info["sha"]
+        url = f"{API_BASE}/contents/{path}"
+        payload = {
+            "message": message,
+            "sha": sha,
+            "branch": BRANCH,
+        }
+        resp = requests.delete(url, headers=HEADERS, json=payload)
+        if resp.status_code in (200, 204):
+            return
+        elif resp.status_code == 409:
+            print(f"⚠️ DELETE {path} conflict, retrying ({attempt}/{retries})")
+            time.sleep(0.5)
+        else:
+            raise Exception(f"DELETE {path}: {resp.status_code} {resp.text}")
+    raise Exception(f"DELETE {path}: failed after {retries} retries")
 
 # ------------------------------------------------------------------ worker loop
 def worker_loop():
@@ -141,14 +153,19 @@ def worker_loop():
                 continue
 
             # Pick oldest file (alphabetical order = chronological order
-            # because addon now prefixes timestamps, but current files
-            # are plain UUIDs; alphabetically oldest UUID ≈ creation time
-            # closely enough). We sort by name.
+            # because addon now prefixes timestamps).
             entries.sort(key=lambda e: e["name"])
             oldest = entries[0]
             queue_name = oldest["name"]  # e.g. "1712345678000001-abc123.json"
             queue_path = f"queue/{queue_name}"
             response_path = f"response/{queue_name}"
+
+            # ★ If response already exists, just delete the queue file and skip
+            existing_resp = api_get(response_path)
+            if existing_resp is not None:
+                print(f"--> Response already exists for {queue_name}, removing queue file only")
+                delete_file_safe(queue_path, f"Remove already-processed {queue_name}")
+                continue
 
             # 2. Download & decrypt request
             file_info = api_get(queue_path)
@@ -169,7 +186,7 @@ def worker_loop():
 
             if not url:
                 print(f"!! Skipping malformed request {queue_name}")
-                delete_file(queue_path, f"Malformed request {queue_name}")
+                delete_file_safe(queue_path, f"Malformed request {queue_name}")
                 continue
 
             print(f"==> Processing {queue_name}: {method} {url}")
@@ -181,7 +198,7 @@ def worker_loop():
                 else:
                     body_data = None
 
-                # Use requests; let it handle timeouts and errors
+                # requests automatically handles Content‑Encoding and decompression
                 fetch_resp = requests.request(
                     method=method,
                     url=url,
@@ -190,15 +207,8 @@ def worker_loop():
                     timeout=30,
                     allow_redirects=True,
                 )
-                # Decompress if needed
-                # (requests handles Content-Encoding transparently,
-                # but we can also request compressed and let requests decode)
-                # Actually, to be safe, we request compressed.
-                # But we already used --compressed with curl. Here we'll just
-                # let requests handle decompression (it does by default).
-                # We'll get the raw content.
                 http_code = fetch_resp.status_code
-                resp_body = fetch_resp.content  # bytes
+                resp_body = fetch_resp.content  # already decompressed
                 resp_headers = dict(fetch_resp.headers)
             except Exception as e:
                 print(f"!! Fetch failed for {queue_name}: {e}")
@@ -221,12 +231,12 @@ def worker_loop():
             except Exception as e:
                 print(f"!! Failed to PUT response for {queue_name}: {e}")
                 # still delete the queue file to avoid infinite loop
-                delete_file(queue_path, f"Failed to create response {queue_name}")
+                delete_file_safe(queue_path, f"Failed to create response {queue_name}")
                 continue
 
-            # 6. DELETE queue file
+            # 6. DELETE queue file safely
             try:
-                delete_file(queue_path, f"Remove processed {queue_name}")
+                delete_file_safe(queue_path, f"Remove processed {queue_name}")
             except Exception as e:
                 print(f"!! Failed to DELETE queue file {queue_name}: {e}")
 
