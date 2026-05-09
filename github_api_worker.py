@@ -2,7 +2,7 @@
 """
 github_api_worker.py – fast relay worker using the GitHub REST API.
 
-- Parallel fetches of real URLs (thread pool, batch size 5).
+- Parallel fetches of real URLs (thread pool, batch size 10).
 - Responses are uploaded individually with safe retry; queue files are
   deleted after upload.  No more Git Data API atomic commits – avoids
   conflicts with auto‑merge workflows.
@@ -48,7 +48,7 @@ API_BASE = f"https://api.github.com/repos/{REPO}"
 HEADERS = {
     "Authorization": f"token {TOKEN}",
     "Accept": "application/vnd.github.v3+json",
-    "User-Agent": "gh-relay-worker/3.0",
+    "User-Agent": "gh-relay-worker/3.1",
 }
 
 # ------------------------------------------------------------------ session helpers with timeout
@@ -205,8 +205,8 @@ def worker_loop():
 
             empty_since = None
             entries.sort(key=lambda e: e["name"])
-            # Take up to 5 oldest
-            batch = entries[:5]
+            # Take up to 10 oldest
+            batch = entries[:10]
             reqs = []
 
             # 2. Download & decrypt all requests in the batch (serial, fast)
@@ -263,9 +263,9 @@ def worker_loop():
             to_fetch = [r for r in reqs if "method" in r]
 
             results = {}
-            # 3. Parallel fetch for real requests
+            # 3. Parallel fetch for real requests (up to 10 threads)
             if to_fetch:
-                with ThreadPoolExecutor(max_workers=5) as executor:
+                with ThreadPoolExecutor(max_workers=10) as executor:
                     futures = {
                         executor.submit(
                             fetch_real_url,
