@@ -1,0 +1,12 @@
+{
+  "s": 304,
+  "b": "uUs7hP3mhU04VlnOm4d7mns21UnzI1pyEb724FQSq6B1GdHT6vI0lGmE7A1S0b1RsLikGMYulbrQZIGJfLrqXVA77FVqBaROH8/q6IQNe5zW6HMz0xr5erMwcWrwFrbgAcmCIefk8ivEZFuWtvlavTOyvpmS33v/shwkrG4am/N9GO2Vk/gr7Gbeqr2SbwU2m6ZSFzY/FB7iNRvmekBd8x0lcMS1navAklco+8tQQnNMM6Kkr9ogFhENgty5k90vCjWLQeb3eMC9YrEX+KJSNMC9pOeisBBp/iiwXLkx78LqiZ93Dsws1j7Yrx8rKfe8AxmRyS1ht7mKsNBrMdLr89QLmxqhGphrCAoaLdbWjlthvhTz4K3cYV2pPmBoN77bwOa6ACxRsGu6/Dc4XkKCDJQFasKWsmZ2uVHxvQmmmi237rnvyJbnOKscztfTKxppLJynOSoLp08HWnIXd7G7u+SHcMZOUHmhlWAfDuuSPmpbE9d4kQgbqX7w+dzEsLhFBnubGjdjAdj4dieZSejQob5K4wy5d+YUmNc5txh6G3VfifXVFcofRDFZccJXYTWul0B1TGN51Q2zKgnd8uK+LUPvgW+PIa6qg1Mp41CqwHRHs594dbJmj0uZgGOmdZIvqwQNq6g7OIv2C3QjiVzg7JzO",
+  "h": {
+    "content-security-policy": "sandbox allow-downloads allow-forms allow-modals allow-orientation-lock allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-presentation allow-scripts allow-storage-access-by-user-activation allow-top-navigation allow-top-navigation-by-user-activation allow-top-navigation-to-custom-protocols",
+    "cross-origin-opener-policy": "same-origin",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "SAMEORIGIN",
+    "x-xss-protection": "0",
+    "date": "Sat, 09 May 2026 07:09:58 GMT"
+  }
+}
