@@ -98,7 +98,13 @@ jobs:
             (
               set -euo pipefail
 
-              # ★ Use dedicated Python script to filter headers (no jq argument limit)
+              # ★ If filter_headers.py is missing on relay, pull it from main
+              if [ ! -f filter_headers.py ]; then
+                echo "⚙️  filter_headers.py not found on relay branch, pulling from main..."
+                git fetch origin main
+                git checkout origin/main -- filter_headers.py
+              fi
+
               echo "$REQ_HEADERS" > headers.json
               python3 filter_headers.py headers.json headers.txt
 
