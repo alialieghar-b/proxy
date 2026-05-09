@@ -1,0 +1,18 @@
+{
+  "s": 200,
+  "b": "oVHfJcGiXl/tmGP0P5vgnV6A2eCrIbNaruqMGe2nuXNRBM4SLPV76OQU3Jt0UrBAGf6DRAe9j7O4AXAwcrBDBsTT5Zk1NZWeKaq0mxkd2edPW/KQ0m9fMBgRsSM4PqpDYRzYyIgPGnw/C4Ne5lP/WLVKLygi6Ih3CxLfGXcdRSek0xJh7dDdgLD07bIlwDXWmjhwpUG49l4aFWX7VdWRK4zVxCjN",
+  "h": {
+    "content-type": "text/plain; charset=UTF-8",
+    "content-encoding": "gzip",
+    "date": "Sat, 09 May 2026 07:19:21 GMT",
+    "expires": "Sat, 09 May 2026 07:19:21 GMT",
+    "cache-control": "private, max-age=0",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "SAMEORIGIN",
+    "content-security-policy": "frame-ancestors 'self'",
+    "x-xss-protection": "1; mode=block",
+    "content-length": "151",
+    "server": "GSE",
+    "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+  }
+}
