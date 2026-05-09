@@ -93,17 +93,19 @@ jobs:
             (
               set -euo pipefail
 
-              # Prepare curl command
+              # Prepare curl command – use header file to avoid quoting issues
+              # Write headers into a file (one "Key: Value" per line)
+              echo "$REQ_HEADERS" | jq -r 'to_entries[] | select(.key | ascii_downcase | IN("host","content-length","connection") | not) | "\(.key): \(.value)"' > headers.txt
+
               CURL_CMD="curl -s -o resp.tmp -w \"%{http_code}\" -D resp_headers.txt -L --max-time 30"
               if [ "$REQ_METHOD" != "GET" ]; then
                 CURL_CMD="$CURL_CMD -X $REQ_METHOD"
               fi
-              echo "$REQ_HEADERS" | jq -r 'to_entries[] | select(.key | ascii_downcase | IN("host","content-length","connection") | not) | "-H \"\(.key): \(.value)\""' > curl_headers.txt
-              if [ -s curl_headers.txt ]; then
-                while read -r hdr; do
-                  CURL_CMD="$CURL_CMD $hdr"
-                done < curl_headers.txt
+              # Attach headers from file (curl 7.55+)
+              if [ -s headers.txt ]; then
+                CURL_CMD="$CURL_CMD -H @headers.txt"
               fi
+              # Add body if present
               if [ -n "$REQ_BODY_B64" ] && [ "$REQ_BODY_B64" != "null" ]; then
                 echo "$REQ_BODY_B64" | base64 -d > body.tmp
                 CURL_CMD="$CURL_CMD --data-binary @body.tmp"
@@ -114,7 +116,7 @@ jobs:
               HTTP_CODE=$(eval "$CURL_CMD" || echo "000")
 
               if [ "$HTTP_CODE" = "000" ] || [ ! -f resp.tmp ]; then
-                echo "!! Fetch failed for $REQ_ID"
+                echo "!! Fetch failed for $REQ_ID_DEC"
                 ENC_EMPTY=$(echo -n "" | python3 crypto_tool.py encrypt)
                 jq -n \
                   --arg status "502" \
@@ -144,7 +146,7 @@ jobs:
               if ! git diff --cached --quiet; then
                 git commit -m "Processed $REQ_ID_DEC"
 
-                # Push with retry (conflicts are now nearly impossible, but retry for safety)
+                # Push with retry
                 PUSH_SUCCESS=false
                 for i in 1 2 3; do
                   if git pull --rebase origin relay && git push origin relay; then
