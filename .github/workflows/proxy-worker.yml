@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: read   # we only read the code from main; the worker uses the token for API calls
+  contents: write
 
 jobs:
   worker:
