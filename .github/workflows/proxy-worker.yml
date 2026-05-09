@@ -75,11 +75,14 @@ jobs:
             LINE=$(cat "$QUEUE_PATH")
             ENC_PAYLOAD=$(echo "$LINE" | jq -r '.e')
             REQ_JSON=$(echo "$ENC_PAYLOAD" | python3 crypto_tool.py decrypt 2>/dev/null || echo "")
-            REQ_ID_DEC=$(echo "$REQ_JSON" | jq -r '.id // empty')
-            REQ_URL=$(echo "$REQ_JSON" | jq -r '.url // empty')
-            REQ_METHOD=$(echo "$REQ_JSON" | jq -r '.method // "GET"')
-            REQ_HEADERS=$(echo "$REQ_JSON" | jq -r '.headers // {}')
-            REQ_BODY_B64=$(echo "$REQ_JSON" | jq -r '.body_base64 // ""')
+
+            # ★ Write decrypted JSON to a file, then extract fields with jq to avoid "Argument list too long"
+            echo "$REQ_JSON" > req.json
+            REQ_ID_DEC=$(jq -r '.id // empty' req.json)
+            REQ_URL=$(jq -r '.url // empty' req.json)
+            REQ_METHOD=$(jq -r '.method // "GET"' req.json)
+            REQ_HEADERS=$(jq -r '.headers // {}' req.json)
+            REQ_BODY_B64=$(jq -r '.body_base64 // ""' req.json)
 
             if [ -z "$REQ_ID_DEC" ] || [ "$REQ_ID_DEC" = "null" ] || [ -z "$REQ_URL" ] || [ "$REQ_URL" = "null" ]; then
               echo "!! Decryption failed or malformed request, moving to failed/"
