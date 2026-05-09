@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 """
-github_api_worker.py – batch‑response relay worker using the GitHub REST API.
+github_api_worker.py – high‑throughput relay worker using the GitHub REST API.
 
 - Parallel downloads of queue files (thread pool).
 - Parallel fetches of real URLs (thread pool, batch size 20).
-- Responses are packed into a single batch blob and uploaded
-  as response_batch_<batch_id>.json (flat file, no subdirectory).
-- Queue files are deleted in parallel after upload.
+- Parallel uploads of responses (thread pool, limited to 10 writers).
 - Safe retry on PUT/DELETE conflicts.
 - Rate‑limit watchdog prevents 403 errors.
 - Timeouts on every HTTP request.
@@ -51,13 +49,14 @@ API_BASE = f"https://api.github.com/repos/{REPO}"
 HEADERS = {
     "Authorization": f"token {TOKEN}",
     "Accept": "application/vnd.github.v3+json",
-    "User-Agent": "gh-relay-worker/5.1",
+    "User-Agent": "gh-relay-worker/5.2",
 }
 
 # ------------------------------------------------------------------ session helpers with timeout
 DEFAULT_TIMEOUT = 30   # seconds
 
 def _request(method, url, **kwargs):
+    """Wraps requests.request with a default timeout."""
     if "timeout" not in kwargs:
         kwargs["timeout"] = DEFAULT_TIMEOUT
     return requests.request(method, url, **kwargs)
@@ -97,6 +96,7 @@ def filter_headers(headers: dict) -> dict:
 
 # ------------------------------------------------------------------ rate‑limit watchdog
 def check_and_wait_for_rate_limit():
+    """Query the GitHub rate‑limit endpoint and sleep if we are about to run out."""
     try:
         resp = _request("GET", "https://api.github.com/rate_limit", headers=HEADERS)
         if resp.status_code != 200:
@@ -105,10 +105,10 @@ def check_and_wait_for_rate_limit():
         data = resp.json()
         core = data.get("resources", {}).get("core", {})
         remaining = core.get("remaining", 9999)
-        reset = core.get("reset", 0)
+        reset = core.get("reset", 0)          # Unix timestamp
         if remaining < 50:
             now = time.time()
-            sleep_sec = max(0, reset - now) + 1
+            sleep_sec = max(0, reset - now) + 1   # one extra second of safety
             print(f"⏳ Rate limit low ({remaining} remaining), sleeping {sleep_sec:.0f}s until reset")
             time.sleep(sleep_sec)
             print("💓 Rate‑limit window reset, resuming")
@@ -126,6 +126,7 @@ def api_get(path, **kwargs):
     return resp.json()
 
 def api_list_dir(path):
+    """List all entries in a directory (paginated)."""
     entries = []
     page = 1
     while True:
@@ -146,6 +147,7 @@ def api_list_dir(path):
         page += 1
     return entries
 
+# ------------------------------------------------------------------ safe single‑file upload / delete
 def put_file_safe(path, content_str, message, retries=3):
     url = f"{API_BASE}/contents/{path}"
     for attempt in range(1, retries + 1):
@@ -188,16 +190,18 @@ def delete_file_safe(path, message, retries=3):
 
 # ------------------------------------------------------------------ fetch helpers (executed in threads)
 def download_and_decrypt(queue_name):
+    """Download and decrypt a single queue file. Returns request dict or skip/malformed marker."""
     queue_path = f"queue/{queue_name}"
     response_path = f"response/{queue_name}"
     try:
+        # Check if response already exists
         existing = api_get(response_path)
         if existing is not None:
             return {"queue_name": queue_name, "skip": True}
 
         file_info = api_get(queue_path)
         if file_info is None:
-            return {"queue_name": queue_name, "skip": True}
+            return {"queue_name": queue_name, "skip": True}  # vanished
 
         raw = base64.b64decode(file_info["content"]).decode("utf-8")
         env = json.loads(raw)
@@ -241,23 +245,36 @@ def fetch_real_url(method, url, headers, body_data):
         print(f"  !! background fetch failed for {url}: {e}")
         return (502, b"", {})
 
-def delete_queue_file(queue_name):
-    try:
-        delete_file_safe(f"queue/{queue_name}", f"Remove {queue_name}")
-    except Exception as e:
-        print(f"  !! Failed to delete queue/{queue_name}: {e}")
+def upload_response(queue_name, code, body, resp_headers):
+    """Build response JSON and PUT it, then DELETE the queue file. Called in thread."""
+    enc_body = encrypt(body)
+    resp_obj = {"s": code, "b": enc_body, "h": resp_headers}
+    content_str = json.dumps(resp_obj)
+    put_file_safe(f"response/{queue_name}", content_str, f"Processed {queue_name}")
+    delete_file_safe(f"queue/{queue_name}", f"Remove {queue_name}")
+    print(f"--> Done {queue_name}")
+
+def cleanup_skip_or_malformed(queue_name, kind):
+    """Delete the queue file for already-processed or malformed requests."""
+    if kind == "skip":
+        delete_file_safe(f"queue/{queue_name}", f"Remove already-processed {queue_name}")
+        print(f"--> Cleaned up already-processed {queue_name}")
+    else:
+        delete_file_safe(f"queue/{queue_name}", f"Remove malformed {queue_name}")
+        print(f"--> Removed malformed {queue_name}")
 
 # ------------------------------------------------------------------ worker loop
 def worker_loop():
-    print("🚀 Batch‑response API worker started (flat batch files)")
+    print("🚀 High‑throughput API worker started (parallel everything + rate‑limit watchdog)")
     print("💓 Initial heartbeat")
     last_heartbeat = time.time()
     empty_since = None
 
     while True:
         try:
+            # 1. List all queue entries, then check rate limit
             entries = api_list_dir("queue")
-            check_and_wait_for_rate_limit()
+            check_and_wait_for_rate_limit()          # ★ prevent 403
 
             if not entries:
                 now = time.time()
@@ -289,14 +306,16 @@ def worker_loop():
             if not reqs:
                 continue
 
+            # Separate skip/malformed from real requests
             to_fetch = [r for r in reqs if "method" in r]
             skip_or_malformed = [r for r in reqs if "skip" in r or "malformed" in r]
 
-            # ---- Cleanup skip/malformed (parallel) ----
+            # ---- Cleanup skip/malformed (parallel, limited) ----
             if skip_or_malformed:
                 with ThreadPoolExecutor(max_workers=10) as cl_executor:
                     for r in skip_or_malformed:
-                        cl_executor.submit(delete_queue_file, r["queue_name"])
+                        kind = "skip" if "skip" in r else "malformed"
+                        cl_executor.submit(cleanup_skip_or_malformed, r["queue_name"], kind)
 
             # ---- Fetch all real URLs in parallel ----
             results = {}
@@ -320,36 +339,15 @@ def worker_loop():
                             code, body, resp_headers = 502, b"", {}
                         results[qname] = (code, body, resp_headers)
 
-            # ---- Pack all responses into one batch blob ----
+            # ---- Upload responses in parallel (limited to 10 writers) ----
             if to_fetch:
-                # Batch ID = oldest queue name's timestamp part (first 18 digits)
-                oldest_name = min(r["queue_name"] for r in to_fetch)
-                batch_id = oldest_name[:18] if len(oldest_name) >= 18 else oldest_name
-                # ★ Flat file, no subdirectory
-                batch_path = f"response_batch_{batch_id}.json"
+                with ThreadPoolExecutor(max_workers=10) as up_executor:
+                    for r in to_fetch:
+                        qname = r["queue_name"]
+                        code, body, resp_headers = results[qname]
+                        up_executor.submit(upload_response, qname, code, body, resp_headers)
 
-                manifest = []
-                data = {}
-                for r in to_fetch:
-                    qname = r["queue_name"]
-                    code, body, resp_headers = results[qname]
-                    enc_body = encrypt(body)
-                    resp_obj = {"s": code, "b": enc_body, "h": resp_headers}
-                    manifest.append(qname)
-                    data[qname] = resp_obj
-
-                batch_content = json.dumps({"manifest": manifest, "data": data})
-                put_file_safe(batch_path, batch_content, f"Batch {batch_id}")
-
-                print(f"--> Uploaded batch {batch_id} with {len(to_fetch)} responses")
-
-            # ---- Delete all queue files for processed requests ----
-            all_processed = [r["queue_name"] for r in reqs]
-            with ThreadPoolExecutor(max_workers=10) as del_executor:
-                for qname in all_processed:
-                    del_executor.submit(delete_queue_file, qname)
-
-            # ---- After heavy API usage, re‑check rate limit ----
+            # ★ After heavy API usage, re‑check rate limit before next listing
             check_and_wait_for_rate_limit()
 
         except KeyboardInterrupt:
