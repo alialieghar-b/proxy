@@ -1,0 +1,23 @@
+{
+  "s": 200,
+  "b": "cDndJ+mWrZJ8gcnkHhJoHBtRDG3eFPVIYYlB2m9RhiqUf+PsRvBcWk/CJ15mrzwl+dDEacP/s9tY2KVP8xbPiqD3TUZDZj0r+Euz90ofOhlW/eaMLbu183uSFql7ucJft6tzkutlHqTb11DyVb+WPMJLD7/pXUbsZbdunv/y5o4NgRGPwVk85EwSSO9Bkihn3wGt2RPbZxsYTL7VrBZs1FnsCpuSDc9W0255+mGhW3dLiyWtk6wE1r3XDGLnH/nIZrflcVgs2KNlpHiqmokW49D8P7LQ3zemEPVT730hwjhanfYoZLcAOjmW8lb7iXtU/wcRz02CpRPQsLdb2Y6XxR96VpXwiRF5AdcqbLkhi2+DQ8EupOft0rB1LwmehRto2u7TpOiTzhRA8qXnS4VcgdN0q28=",
+  "h": {
+    "date": "Sat, 09 May 2026 06:21:57 GMT",
+    "pragma": "no-cache",
+    "expires": "-1",
+    "cache-control": "no-cache, must-revalidate",
+    "content-type": "text/javascript; charset=UTF-8",
+    "strict-transport-security": "max-age=31536000",
+    "content-security-policy": "object-src 'none';base-uri 'self';script-src 'nonce-4DaipjYh4AIKmMDxMh3iNg' 'strict-dynamic' 'report-sample' 'unsafe-eval' 'unsafe-inline' https: http:;report-uri https://csp.withgoogle.com/csp/gws/cdt1",
+    "cross-origin-opener-policy": "same-origin-allow-popups; report-to=\"gws\"",
+    "report-to": "{\"group\":\"gws\",\"max_age\":2592000,\"endpoints\":[{\"url\":\"https://csp.withgoogle.com/csp/report-to/gws/cdt1\"}]}",
+    "accept-ch": "Sec-CH-UA-WoW64",
+    "permissions-policy": "unload=()",
+    "content-disposition": "attachment; filename=\"f.txt\"",
+    "content-encoding": "br",
+    "server": "gws",
+    "x-xss-protection": "0",
+    "x-frame-options": "SAMEORIGIN",
+    "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+  }
+}

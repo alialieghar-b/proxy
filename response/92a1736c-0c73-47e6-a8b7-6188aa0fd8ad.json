@@ -1,0 +1,18 @@
+{
+  "s": 200,
+  "b": "Xrj6+OI2LqXjgA9IsxCg/s2oQoIrXwSkyLhaKQSVhj5SgOopECocB7o/Fj7Bklc=",
+  "h": {
+    "version": "911150276",
+    "content-type": "application/json; charset=UTF-8",
+    "x-content-type-options": "nosniff",
+    "accept-ch": "Sec-CH-Prefers-Color-Scheme",
+    "content-disposition": "attachment; filename=\"f.txt\"",
+    "content-encoding": "gzip",
+    "date": "Sat, 09 May 2026 07:47:10 GMT",
+    "server": "gws",
+    "content-length": "39",
+    "x-xss-protection": "0",
+    "x-frame-options": "SAMEORIGIN",
+    "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+  }
+}

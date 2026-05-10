@@ -1,0 +1,18 @@
+{
+  "s": 301,
+  "b": "xs4s6DLsMTQG4oj8lhT+QONQWqL0ok2fHeYllCVlfg5dfwlh1/C7HoX13JxUso0bwby7xZc=",
+  "h": {
+    "content-type": "text/plain; charset=UTF-8",
+    "content-encoding": "gzip",
+    "date": "Sat, 09 May 2026 07:22:35 GMT",
+    "expires": "Sat, 09 May 2026 07:22:35 GMT",
+    "cache-control": "private, max-age=0",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "SAMEORIGIN",
+    "content-security-policy": "frame-ancestors 'self'",
+    "x-xss-protection": "1; mode=block",
+    "content-length": "45",
+    "server": "GSE",
+    "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+  }
+}

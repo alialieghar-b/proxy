@@ -1,0 +1,23 @@
+{
+  "s": 200,
+  "b": "gcbt8UVthx8nR7JzrujmlhZdKo2nkV/oGbWjLrYA/sxXP4eXrWG/KQMlZdsoZFbMzy+HvoXf8Sk7eANGcfFl8ZsokbJED2y6cMQ4Ta0EDMpup1aoj3nN0xKg+zwwOW6FyN0Wp0rtr0xUfcm0aIkXymMsF15bhRxU4JHNnreEJbzigaPO5luYgNg9PzkAMS2yNgveJUnH7ijkJhEAUqWcFncaP7a4EQPNEApFloejwdGiIthcSFhuj6QRoD6p/uG9Hdi38GmJWRDonjMXExO5o0cWVZbPfh5ToN/s3G4NofqyLrfZ3At4pI8/Vns/Ef8wCxAX5aI+bUHJZIvBxjUvQxAEj8YjoCgRrmpP/BRfd/Wy5qaKMXbZnB8rR5Wl5CzA2ixC8dN/7UxPdzZIl26CpkppYaN7oqk1jnsO/iDpd5LNxpSOTysNc/5TLHHPhuxxt+6af/PB4bYTI6KacQDI+8FU4L1FE/MoSJfXKkgNyTQRkS6hj5RvMVgcYpVVMSACg+iVTl71sL1pWgQFRdfcRu2PT5u62M3cyN9bovgLdukl6bjC7pHcUweVzTEvpVs7JNO7hRszU1/LXRNZTxWr7Eh6WeKOtgJKgduMWobfus6HV3fuWRgiOlY+M7tl4FdWVhG6PozQMlqBRC+/nd0mxH6Uf0My6lXBXFkIsNcgNycR1KbTTBZCAl98lMM0ed7zq2Elik905fshbuFPjOp37BH3xUlNL0RGFj50FubrQJwUmYuiWxIAqftS+dJXhhgMlRJG0XhulAe/ggcs8JCpnFV+k1CUYGpv2fO/hIzeZyg23Bv/pe7rFR2Entg6awZj4i8qD6m1kLITAh8i3EJAb03TUBeRVV5/xv4XFx18ABMuWP13A4glfsjDhTCdYrW7U83b/uN+s0fPaO4EKVTvMwKQs2E4zKAU7mERBlo6eDRTz5aBe2W6Pp77lQG7qmlZpUeIs1exuUtzO1IZFvxYWRRbM9SdcwcwXJuZmqK0wGwsaLqsmldnX62iXKjdathrGScVWTWMqqUTwlowCajOXB438ysEUFzS7O9a7BrpNJDWz5zQey2yQe+4umtLKzptN32tNLNAWmKzcXcMpoDOTPOkCeWPevrn3EgIbGqqQ+CTe6d6t9VSfMpyxsu01lgCRVVjrYfWswagTcslqcBDxldOPdHPKN2nzrqidLdA40g/pUNGWJ2x++ubF2lhHvKT5hVQ8LG4efRrD4lJpsv28k9VgTo8pZTf5iLsT3D3e30/4Ky9XEPqMHyrZzlN5NsNxKYwrPS5kP1YrXGqciqneq3W",
+  "h": {
+    "date": "Sat, 09 May 2026 07:13:03 GMT",
+    "pragma": "no-cache",
+    "expires": "-1",
+    "cache-control": "no-cache, must-revalidate",
+    "content-type": "text/javascript; charset=UTF-8",
+    "strict-transport-security": "max-age=31536000",
+    "content-security-policy": "object-src 'none';base-uri 'self';script-src 'nonce-6KozusuGqqaoQhvMqp0HSg' 'strict-dynamic' 'report-sample' 'unsafe-eval' 'unsafe-inline' https: http:;report-uri https://csp.withgoogle.com/csp/gws/cdt1",
+    "cross-origin-opener-policy": "same-origin-allow-popups; report-to=\"gws\"",
+    "report-to": "{\"group\":\"gws\",\"max_age\":2592000,\"endpoints\":[{\"url\":\"https://csp.withgoogle.com/csp/report-to/gws/cdt1\"}]}",
+    "accept-ch": "Sec-CH-Prefers-Color-Scheme, Downlink, RTT, Sec-CH-UA-Form-Factors, Sec-CH-UA-Platform, Sec-CH-UA-Platform-Version, Sec-CH-UA-Full-Version, Sec-CH-UA-Arch, Sec-CH-UA-Model, Sec-CH-UA-Bitness, Sec-CH-UA-Full-Version-List, Sec-CH-UA-WoW64",
+    "permissions-policy": "unload=()",
+    "content-disposition": "attachment; filename=\"f.txt\"",
+    "content-encoding": "br",
+    "server": "gws",
+    "x-xss-protection": "0",
+    "x-frame-options": "SAMEORIGIN",
+    "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+  }
+}

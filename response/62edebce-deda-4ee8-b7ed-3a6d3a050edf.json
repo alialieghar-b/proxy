@@ -1,0 +1,21 @@
+{
+  "s": 200,
+  "b": "jH9zxTlblY9IosVoMCyC+YmaDMa+HxVZNptsVIm8VSp5saIIzrLB/14XP2dkYJKMTR/sKE/qZkaWNjlxtSe7EqrXgVY2CTra+1Qw0q9RrKusCrHtkZ9rJQJpam54jRxbmVfyYO2rRfd9AnnbShKLs9KIlksq5MC8oRoSCdkzbnN2ViJS2OvfADLwK/7b7enKW40HkiHw8S3ioi2lm2QrcMR8qkJp0PCSqWkRmqs62PoDENp205aq74k33tQAYU6M0TUBwcUvVvrkYcXX7c1R/PynhIyOeyjtUdoyKeINqSRSO2ySUDPm+a4mBjy0jAaPS2ATWpLo/7nHC+32ehHV32Z8Kiw0vs2auUmoM1IFnA/ysu/x3fPT2wXAhrw817j2v4l7Yqeqx1mEzE4U/o07xa7vCliNeqV/IXy5yED7uIrnY1Wnz4j85pvg6miyskTocQxkgk4MEzz3OOOINP77PzW/AiEphdUlJ1rc2nEx6d41vqylhRKEURlZOKS775UHeiVIzTiKsaTdOad+UvHNpzH0SRf7uTKAACKkEub2sg0sRHLJiBKOzO1QLRgWyyQCyas9EfYPKLCVgY+0ECl3sDoBP2aEspemOKLL2iAy2yzrY+3LfgYhxQ1BoHJzKy3uUvDoxhCnd62GPO1HBBxJDjmZ",
+  "h": {
+    "content-type": "application/x-protobuffer",
+    "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+    "pragma": "no-cache",
+    "expires": "Mon, 01 Jan 1990 00:00:00 GMT",
+    "date": "Sat, 09 May 2026 07:08:36 GMT",
+    "content-security-policy": "require-trusted-types-for 'script';report-uri /checkin/_/AndroidCheckinHttp/cspreport",
+    "accept-ch": "Sec-CH-UA-Arch, Sec-CH-UA-Bitness, Sec-CH-UA-Full-Version, Sec-CH-UA-Full-Version-List, Sec-CH-UA-Model, Sec-CH-UA-WoW64, Sec-CH-UA-Form-Factors, Sec-CH-UA-Platform, Sec-CH-UA-Platform-Version",
+    "cross-origin-opener-policy": "same-origin",
+    "permissions-policy": "ch-ua-arch=*, ch-ua-bitness=*, ch-ua-full-version=*, ch-ua-full-version-list=*, ch-ua-model=*, ch-ua-wow64=*, ch-ua-form-factors=*, ch-ua-platform=*, ch-ua-platform-version=*",
+    "content-encoding": "gzip",
+    "server": "ESF",
+    "x-xss-protection": "0",
+    "x-frame-options": "SAMEORIGIN",
+    "x-content-type-options": "nosniff",
+    "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+  }
+}

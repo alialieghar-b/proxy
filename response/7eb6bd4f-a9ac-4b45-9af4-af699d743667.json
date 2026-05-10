@@ -1,0 +1,23 @@
+{
+  "s": 200,
+  "b": "JeSHBurZAVz74gwNHUriMdbtXnXoqifz/4gkF3x/IS+AEcUN1Ilo0+6/Xl8Q/otD1GKSd3EMY6oRV64r9ceEwmsU4ZuI091tUR/vcjvTka0my7fEbXsK7gbUQ1DKZL8lQVhdZEIXo5n4Ep7un+EvDbPB5Gg0CJb7MXOtZRe7837Zn6DryviMbVwhnpT+3WEMhqz5smenNswWm5njPCgbbo/yUqf+cG9e4FEEywWP6ILNuJiG5m/Kcn5bTzCcLymQoDkNBWCFqZ+rfwK8QsOJsVii/JcOxJNgGlscHERVri3z8DKtdDy1Ggc/tmk5q5zTvdqJYS9FEWo+dKwCnBsBfN3SbS8GlmQediMgg3UFe+QjvT67GHY9HsP2hfPC0WTBDuuO2a5PZCWCJMnU0q9Yt0i82+v4uiAG89BUP6BeqFU6ytxg38osNLNNVU54tITB6noWrTU2C2kMCeH5/ZvH3JOV3KlEWBAZkRbl5QzSzX2p2KETRJmV5j7QuewrxK/Ds1QdBYou6Y9Y/2wt4F+71mY9YAmHzWg7PBzpZI0rjJVrSo85Ak+VGUY0uluQRbG8Lk8AGZlJJVKnXAwPTZGy4dtorpbRTbqKjomDN/nLUPFColBgkdqtTxv1Fvs4CVGcBY6YcsOIMevyPeoSom8L1ZMHhJIvUVNKyNvGeD5O3qn37qqUSKpporWAMz0S0JzB5jw/+jlQojMCf+lhm9j+kdMonuckrHqLJMHM6tOZaUHVDlxpzN3SiVQE+5SLK9FF6XAeyyC2REWOPtaUKZCx3RSKFZEIxwC5hBnsBezPltMO7r4Cw4+jxyEJubFndYf3oj07STYpHe/x9wxN2ImMosruuoTBBBILp1UVBgdwLuatSHYRF7nMDSF2HiAFBqUYVeFtJemYaRlfTfVjmp2NQ4qYMQVg3F3DMxf3G/ErCDgw1HerKGMDorRsjN+IZwH4SbVa2JL+G+lxhiMhDvD3QJteJauJIO/kMhgUJnGddCUjDcyZEBRccVjPiezmFoTWb1mBs3FLXeYdy41/T8RozRooYyBn+Yb113aV/okFlDKI3iz/hkiuaRmwqq/5rUs65ZWgJiVtUU935lsWU5MtsFeDtrJYAq9soH/lEUD60Qxp7dSAMqlkoZAknG9leC+CC/PPCvZ2oloIm2Slk8i6mNF043ze12W1KjR7DmGpLKaGv1y2hNMr5Yb2i4kn+IxGencPMWK1QsariA==",
+  "h": {
+    "date": "Sat, 09 May 2026 08:16:06 GMT",
+    "pragma": "no-cache",
+    "expires": "-1",
+    "cache-control": "no-cache, must-revalidate",
+    "content-type": "text/javascript; charset=UTF-8",
+    "strict-transport-security": "max-age=31536000",
+    "content-security-policy": "object-src 'none';base-uri 'self';script-src 'nonce-affYhoGk1EHJuMErWk-fUw' 'strict-dynamic' 'report-sample' 'unsafe-eval' 'unsafe-inline' https: http:;report-uri https://csp.withgoogle.com/csp/gws/cdt1",
+    "cross-origin-opener-policy": "same-origin-allow-popups; report-to=\"gws\"",
+    "report-to": "{\"group\":\"gws\",\"max_age\":2592000,\"endpoints\":[{\"url\":\"https://csp.withgoogle.com/csp/report-to/gws/cdt1\"}]}",
+    "accept-ch": "Sec-CH-Prefers-Color-Scheme, Downlink, RTT, Sec-CH-UA-Form-Factors, Sec-CH-UA-Platform, Sec-CH-UA-Platform-Version, Sec-CH-UA-Full-Version, Sec-CH-UA-Arch, Sec-CH-UA-Model, Sec-CH-UA-Bitness, Sec-CH-UA-Full-Version-List, Sec-CH-UA-WoW64",
+    "permissions-policy": "unload=()",
+    "content-disposition": "attachment; filename=\"f.txt\"",
+    "content-encoding": "br",
+    "server": "gws",
+    "x-xss-protection": "0",
+    "x-frame-options": "SAMEORIGIN",
+    "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+  }
+}

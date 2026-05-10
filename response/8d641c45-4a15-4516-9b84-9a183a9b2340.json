@@ -1,0 +1,23 @@
+{
+  "s": 200,
+  "b": "O9XatJWBUeyMHF4bJ/ptuyFw06H4G2CjoZLog4xTWYNO50pw6IUT6uSCvD3OG0YV3xJvCcG/CgnYM8sVRNUPT5NzD9i2XJQFnpEcsf1H/TKJK+h/98CDhWyDtcPwnIHtJAp51ncPlce8v1Yo",
+  "h": {
+    "content-type": "application/json; charset=utf-8",
+    "vary": "Sec-Fetch-Dest, Sec-Fetch-Mode, Sec-Fetch-Site",
+    "x-content-type-options": "nosniff",
+    "x-cup-server-proof": "3046022100d21320c444c220f653fbdd80c2ea1a77d959a209f04e869b57c17a05ea464683022100ec8929915a96ec757afbf7c26c4a70967fab63392c51b66ea4f21454d11af7d0:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "etag": "W/\"3046022100d21320c444c220f653fbdd80c2ea1a77d959a209f04e869b57c17a05ea464683022100ec8929915a96ec757afbf7c26c4a70967fab63392c51b66ea4f21454d11af7d0:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"",
+    "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+    "pragma": "no-cache",
+    "expires": "Mon, 01 Jan 1990 00:00:00 GMT",
+    "date": "Sat, 09 May 2026 07:39:25 GMT",
+    "content-disposition": "attachment; filename=\"json.txt\"; filename*=UTF-8''json.txt",
+    "cross-origin-opener-policy": "same-origin",
+    "cross-origin-resource-policy": "same-site",
+    "content-encoding": "gzip",
+    "transfer-encoding": "chunked",
+    "server": "ESF",
+    "x-xss-protection": "0",
+    "x-frame-options": "SAMEORIGIN"
+  }
+}

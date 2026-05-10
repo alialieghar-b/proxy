@@ -1,0 +1,23 @@
+{
+  "s": 200,
+  "b": "qpTAoYNoUifCHXL+tMbXKq7Z8A2k+n68q/kxUPlpLpaMWi80e2YEltJbchAopx9pUI1eAZvkkqTEXGn8/HTvggdlVt5VrnHsgadTkwluZWYTOmW4ID0Vp+0ste+tenvkcdBbQ9QWom32YoDY6sigY51eD3dUiTIDLct9Rl0Zm1QchuLlI2RWB9CYy8oOA70PF+XPoofhczcmrdnSHxwdcbBldw6quDNKCO7H35uhJ4OysLAy7+oci8KrDl92sMYKpkrBXBT3ebNrGoXLSlwT+rho5Cal9AaGs6u1eZcjWlirCFl1972IbLje0Jmemwp7sneRCuLuFpHKJYN+i7E5w+kq8Og3O2ECYCXgpoGohIEkhWpQeD0No2v1SrMfDpGmbg6r0wy93vhDucNJ7k7tGnmRCHZcnKpVYObQexmpXXr+L5LFgMsaSynPxBvuFI9YvqGD2O+U/xqUjOTPrJydLGzQK8aFfUOzSUBq9JgsFGjo4doZEclQnJCVN2apXMMFXhARYnSklmruIGuMKN356ALFh29ew4A9OxyMXdx6/jZKxKcZzaOeVkgx+FSxwxxEZHvHSJDO0dZS5ACZTYBQR0QOvZuOd3DafyMrngsEBgDig6+vExVESJw3uZMid7fa1Rbq9ljqDzTd62PjCf3qtq6yJ+bcwAsW/SRGfe30awU6daTDpjx9a4oEzgSIplxNMKIhjQiaakJFIFqhas9874kCTTNiJsDgEQ0ULX7ZFMlQUBhA+DiQUcHP6EW6FmU2vhjt2XrgLXkRs21m9Z9OqdzIjNhqaebuwl96Ulj55jAE1dLZvXOx6gOvpim4kQt5C7mAqLJndZAPgbKM+1jykggbFL7BkwYs3Pt/9lUDX5musmrmAn7JmSH7mhn1E2hq0s65Ytu5mHFt+X1kLlhhsvCbtKgtLAQuTivunKue+XAAO9F1oI+qBDTkEaxAYoTDEFk04pshd4+w2s47GrcxcQ9GI9v+xzbhLHE6Z5Y40BO97P3i4C7uEmSgWYQC57qvgDkpvLzkFxGAiprRpX4PSwJS2rghuUAJPjB57ccZ04XlhKaHH/Kqsd10slG0A1U5RStalrcBo+zms4E0uC+dcaX1e8fQaa9AL7fwfzxGjbAovg4ZwizAGgRV8XmRlE2Le1jDZHmXcANABWNInF1nswRTC9UlqMryZU6JVSxp2gYg2YsPbOih8w==",
+  "h": {
+    "date": "Sat, 09 May 2026 07:36:56 GMT",
+    "pragma": "no-cache",
+    "expires": "-1",
+    "cache-control": "no-cache, must-revalidate",
+    "content-type": "text/javascript; charset=UTF-8",
+    "strict-transport-security": "max-age=31536000",
+    "content-security-policy": "object-src 'none';base-uri 'self';script-src 'nonce-i0yn9XVWX04OONridBtRtA' 'strict-dynamic' 'report-sample' 'unsafe-eval' 'unsafe-inline' https: http:;report-uri https://csp.withgoogle.com/csp/gws/cdt1",
+    "cross-origin-opener-policy": "same-origin-allow-popups; report-to=\"gws\"",
+    "report-to": "{\"group\":\"gws\",\"max_age\":2592000,\"endpoints\":[{\"url\":\"https://csp.withgoogle.com/csp/report-to/gws/cdt1\"}]}",
+    "accept-ch": "Sec-CH-Prefers-Color-Scheme, Downlink, RTT, Sec-CH-UA-Form-Factors, Sec-CH-UA-Platform, Sec-CH-UA-Platform-Version, Sec-CH-UA-Full-Version, Sec-CH-UA-Arch, Sec-CH-UA-Model, Sec-CH-UA-Bitness, Sec-CH-UA-Full-Version-List, Sec-CH-UA-WoW64",
+    "permissions-policy": "unload=()",
+    "content-disposition": "attachment; filename=\"f.txt\"",
+    "content-encoding": "br",
+    "server": "gws",
+    "x-xss-protection": "0",
+    "x-frame-options": "SAMEORIGIN",
+    "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "s": 200,
+  "b": "wYI4HVZvCWo/3Tuf/uYgHDSJNS0Uegj5eCiUK3XG6Ac3juNh8vEU8ajKTrnIPAOOoTG+jQsPUf2bRcS9vHIyTU7f0yppnXu2FbkbgWOD+fiuzPhbqdCNlNDY/EOhUf5dpbqEY3K1dy01k/P4Q258C6mVNFVM/CGcXwhiYdzi0HXYgz3+5p93ULFIqSCYy/RIeTsHaBsB2jEichsoxeSrfom1L2gP8KBGoLjBotLNkFokLzKlamB4gPpI7C25sUjWU7RWf31/RXvNlAX3EXlt9PVp3VWImPyyLbnFMRlB/YcINvpOgWqmjlMbplUHPXYv0r1KUJHizyjaujDbmobQ3WfLkkkL/4AscQyPPyqcBVCQVywR+ZMsVPob6YUXMQ4GZJG6obHo4GuUt7gP3FTuCTfaynGg69249ZUGWWFr6rzYfLBfzWVV5tRtw2hljLqNkcAqD1c//UBdpM1lPvxNyIPcR1HnJ1OGeqNexNm6MDgcVuvugAJgPNE1RKso1QBjOpQcS/vjH7zFUxRPO64rH+9Lsm1JYp9lUnJ5FG7RlsCfgnJ5FZ+LutanTHIpOvuzwK4xcrZwYPy4SVtMBt3WZ4ir5dmF37VsEeBt6lpmIZwz+F2uDGbJOkSzCAnO0kSx6Z0AfTny4ASHeyvUI24wMHIOFYBzF4c+maZECKYkQzsjAb9RjsT7ygeakYIZuV9KAl0UkGCtSKKysTgrtSJP1v8Ytmuzqww/0104FmnW5C3OPl48LyfkMhahEMiH6/i209XII6e67qoscnpT+73+w5nc8RjzgqhL8wQqB2UIqghBLa9KnqQNShJQNCrQRiwXzflnRqAL94357YQBcmZmdnVOOPIqtYaekpS30uCTt4B6uOrftY83fJvTR/OC7EvJ1t0r39RNY1RmpfaaEWbX80k6pKjBC4D3CpKmakCDw9RbNeD+mx4zhhYMmbzZ0p+CNTVlblV+75qvg1NEI7G5C4SoY9QcgsJ8nO1tHRxeqYxaGG5ebpXxZPCHopxh5NhPv1cfe2T7ngxRPX6xghaJMZRgr2dhbAS8GTVwcfqgp6leO4hgO5HY2m91SSZRYHTdIW3oPz/MBJsEsd/89h35xd8xoQenjBeVo1yZw4TWbR1CruAO8suZbdNZK3u668EGx9M+1vNUfjMWNoDmD/JIlJzmbQkcSrrf2o/kE3TphtR7Cpm2C2S7o7UydbSFT+/BkEjfW/0Rv6acB+G9T31oHWwVW4LnqL/64+uNLeuQAuxNdvGNTZrG2QzyjPz+lDEDwIFAKoshHC9YlwgoZGz6vhnuTUsviZ9gD6pUZMBNch+FUQOxfQAfNBJkh1BVoi56twc=",
+  "h": {
+    "date": "Sat, 09 May 2026 07:58:23 GMT",
+    "pragma": "no-cache",
+    "expires": "-1",
+    "cache-control": "no-cache, must-revalidate",
+    "content-type": "text/javascript; charset=UTF-8",
+    "strict-transport-security": "max-age=31536000",
+    "content-security-policy": "object-src 'none';base-uri 'self';script-src 'nonce-m6MO1TwpYoJsAuwhCL6h3g' 'strict-dynamic' 'report-sample' 'unsafe-eval' 'unsafe-inline' https: http:;report-uri https://csp.withgoogle.com/csp/gws/cdt1",
+    "cross-origin-opener-policy": "same-origin-allow-popups; report-to=\"gws\"",
+    "report-to": "{\"group\":\"gws\",\"max_age\":2592000,\"endpoints\":[{\"url\":\"https://csp.withgoogle.com/csp/report-to/gws/cdt1\"}]}",
+    "accept-ch": "Sec-CH-Prefers-Color-Scheme, Downlink, RTT, Sec-CH-UA-Form-Factors, Sec-CH-UA-Platform, Sec-CH-UA-Platform-Version, Sec-CH-UA-Full-Version, Sec-CH-UA-Arch, Sec-CH-UA-Model, Sec-CH-UA-Bitness, Sec-CH-UA-Full-Version-List, Sec-CH-UA-WoW64",
+    "permissions-policy": "unload=()",
+    "content-disposition": "attachment; filename=\"f.txt\"",
+    "content-encoding": "br",
+    "server": "gws",
+    "x-xss-protection": "0",
+    "x-frame-options": "SAMEORIGIN",
+    "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+  }
+}

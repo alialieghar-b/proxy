@@ -1,0 +1,20 @@
+{
+  "s": 200,
+  "b": "2AzIuLE9xvkbe0QDt0UF9/8O/3DzWVuW2pNBy17zBrPcunzOLGAMIvKVA3KD7pq/4bYHXfE+LTGWv0UGkZd39QpGbDpTsRxpzM/6wRSb+CVbYS8N1ZzYVF1EJzA7pi1Uf0jjMNTNusBo3UvBQKTRVXHSFH3wWj2as+/tXIZODkGIJ7VXXBhQKuhojwgNMsoDRwbD4pQ=",
+  "h": {
+    "date": "Sat, 09 May 2026 07:47:46 GMT",
+    "pragma": "no-cache",
+    "expires": "-1",
+    "cache-control": "no-cache, must-revalidate",
+    "content-type": "text/javascript; charset=ISO-8859-1",
+    "content-security-policy": "object-src 'none';base-uri 'self';script-src 'nonce-CWlELKhYzTbdTlAxqNNX_w' 'strict-dynamic' 'report-sample' 'unsafe-eval' 'unsafe-inline' https: http:;report-uri https://csp.withgoogle.com/csp/gws/xsrp",
+    "accept-ch": "Sec-CH-Prefers-Color-Scheme",
+    "content-disposition": "attachment; filename=\"f.txt\"",
+    "content-encoding": "gzip",
+    "server": "gws",
+    "content-length": "116",
+    "x-xss-protection": "0",
+    "x-frame-options": "SAMEORIGIN",
+    "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000"
+  }
+}
